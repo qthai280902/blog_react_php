@@ -53,7 +53,7 @@ if ($today_post_count >= $allowed_limit) {
 // ── 2. NHẬN DỮ LIỆU TỪ MULTIPART/FORM-DATA ──
 $title   = isset($_POST['title'])   ? trim($_POST['title'])   : '';
 $content = isset($_POST['content']) ? trim($_POST['content']) : '';
-$hashtags = isset($_POST['hashtags']) ? trim($_POST['hashtags']) : '';
+$hashtags = isset($_POST['hashtags']) ? trim($_POST['hashtags']) : (isset($_POST['tags']) ? trim($_POST['tags']) : '');
 
 if (empty($title) || empty($content)) {
     http_response_code(400);

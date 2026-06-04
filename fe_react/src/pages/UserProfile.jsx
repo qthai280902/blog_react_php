@@ -14,6 +14,7 @@ const UserProfile = () => {
     const [posts, setPosts] = useState([]);
     const [reposts, setReposts] = useState([]);
     const [trashItems, setTrashItems] = useState([]);
+    const [likedPosts, setLikedPosts] = useState([]);
     const [activeTab, setActiveTab] = useState('posts');
     const [loading, setLoading] = useState(true);
     const [isFollowing, setIsFollowing] = useState(false);
@@ -56,11 +57,18 @@ const UserProfile = () => {
         fetchProfile();
         fetchUserPosts();
         fetchUserReposts();
-    }, [id, navigate]); // BẮT BUỘC: id trong dependency array để fix lỗi cache component khi nhảy profile
+        if (isOwnProfile) {
+            fetchLikedPosts();
+        }
+    }, [id, navigate, isOwnProfile]); // BẮT BUỘC: id trong dependency array để fix lỗi cache component khi nhảy profile
 
     useEffect(() => {
-        if (isOwnProfile && activeTab === 'trash') {
-            fetchTrash();
+        if (isOwnProfile) {
+            if (activeTab === 'trash') {
+                fetchTrash();
+            } else if (activeTab === 'liked') {
+                fetchLikedPosts();
+            }
         }
     }, [activeTab, isOwnProfile]);
 
@@ -124,6 +132,34 @@ const UserProfile = () => {
         } catch (err) {
             console.error(err);
             setTrashItems([]);
+        }
+    };
+
+    const fetchLikedPosts = async () => {
+        try {
+            const res = await axiosClient.get(`/api/users/read_liked_posts.php?user_id=${id}`, {
+                headers: token ? { 'Authorization': 'Bearer ' + token } : {}
+            });
+            const likedData = res?.data || res;
+            setLikedPosts(Array.isArray(likedData) ? likedData : []);
+        } catch (err) {
+            console.error("Fetch Liked Posts Error:", err);
+            setLikedPosts([]);
+        }
+    };
+
+    const handleUnlikeFromTab = async (postId) => {
+        if (!token) return;
+        try {
+            await axiosClient.post('/api/social/like.php', 
+                { post_id: postId },
+                { headers: { 'Authorization': 'Bearer ' + token } }
+            );
+            setLikedPosts(prev => prev.filter(p => p.id !== postId));
+            toast.success("Đã bỏ thích bài viết!");
+        } catch (err) {
+            console.error("Unlike Error:", err);
+            toast.error("Lỗi khi bỏ thích.");
         }
     };
 
@@ -401,6 +437,14 @@ const UserProfile = () => {
                     </button>
                     {isOwnProfile && (
                         <button 
+                            onClick={() => setActiveTab('liked')} 
+                            className={`text-xs font-bold pb-3.5 uppercase tracking-wider transition-all flex-shrink-0 flex items-center gap-1.5 cursor-pointer ${activeTab === 'liked' ? 'text-pink-600 border-b-2 border-pink-600' : 'text-slate-400 hover:text-slate-600'}`}
+                        >
+                            <Heart size={13} strokeWidth={2} /> Đã thích ({likedPosts.length})
+                        </button>
+                    )}
+                    {isOwnProfile && (
+                        <button 
                             onClick={() => setActiveTab('trash')} 
                             className={`text-xs font-bold pb-3.5 uppercase tracking-wider transition-all flex-shrink-0 flex items-center gap-1.5 cursor-pointer ${activeTab === 'trash' ? 'text-red-500 border-b-2 border-red-500' : 'text-slate-400 hover:text-slate-600'}`}
                         >
@@ -508,6 +552,60 @@ const UserProfile = () => {
                                     )}
                                 </div>
                             ))}
+                        </>
+                    )}
+
+                    {/* ── TAB: LIKED POSTS ── */}
+                    {activeTab === 'liked' && isOwnProfile && (
+                        <>
+                            {likedPosts.length === 0 ? (
+                                <div className="text-center py-12 bg-white rounded-2xl border border-slate-100 shadow-[0_8px_30px_rgb(0,0,0,0.01)] animate-in fade-in duration-300">
+                                    <Heart className="mx-auto text-slate-300 mb-3" size={32} strokeWidth={1.5} />
+                                    <p className="text-slate-400 text-sm font-semibold">Chưa có bài viết đã thích</p>
+                                </div>
+                            ) : (
+                                likedPosts.map(post => (
+                                    <div key={post.id} className="relative group animate-in fade-in slide-in-from-bottom-2 duration-300">
+                                        <Link to={`/post/${post.id}`} className="no-underline block">
+                                            <div className="bg-white p-5 rounded-2xl border border-slate-100 shadow-[0_8px_30px_rgb(0,0,0,0.01)] hover:shadow-[0_8px_30px_rgb(0,0,0,0.03)] hover:border-pink-100/50 transition-all relative overflow-hidden">
+                                                <div className="flex gap-4 items-start">
+                                                    {post.cover_image && (
+                                                        <div className="w-24 h-16 sm:w-28 sm:h-20 rounded-xl overflow-hidden shrink-0 border border-slate-100 bg-slate-50">
+                                                            <img src={`http://localhost:8000/uploads/${post.cover_image}`} className="w-full h-full object-cover" alt="" />
+                                                        </div>
+                                                    )}
+                                                    <div className="flex-1 min-w-0">
+                                                        <span className="flex items-center gap-1 text-[8px] font-bold text-slate-400 uppercase tracking-wider mb-1.5">
+                                                            Viết bởi @{post.author_name}
+                                                        </span>
+                                                        <h3 className="text-base font-bold text-slate-800 group-hover:text-pink-600 mb-1.5 transition-colors pr-16 leading-snug line-clamp-1">
+                                                            {post.title}
+                                                        </h3>
+                                                        <p className="text-slate-400 text-xs line-clamp-2 leading-relaxed pr-8">
+                                                            {post.content ? post.content.replace(/<[^>]*>?/gm, '') : ''}
+                                                        </p>
+                                                    </div>
+                                                </div>
+                                            </div>
+                                        </Link>
+
+                                        {/* Unlike Button right on the card */}
+                                        <div className="absolute top-5 right-5 z-10">
+                                            <button
+                                                onClick={(e) => {
+                                                    e.preventDefault();
+                                                    e.stopPropagation();
+                                                    handleUnlikeFromTab(post.id);
+                                                }}
+                                                className="p-2 rounded-lg bg-pink-50 text-pink-600 border border-pink-100 hover:bg-slate-50 hover:text-slate-400 hover:border-slate-100 transition-all shadow-sm active:scale-95 cursor-pointer flex items-center justify-center"
+                                                title="Bỏ thích"
+                                            >
+                                                <Heart size={12} strokeWidth={2.5} className="fill-pink-600" />
+                                            </button>
+                                        </div>
+                                    </div>
+                                ))
+                            )}
                         </>
                     )}
 

@@ -456,7 +456,8 @@ CREATE TABLE `reposts` (
   `post_id` int(11) NOT NULL,
   `origin_user_id` int(11) NOT NULL,
   `is_hidden` tinyint(1) DEFAULT 0,
-  `created_at` timestamp NOT NULL DEFAULT current_timestamp()
+  `created_at` timestamp NOT NULL DEFAULT current_timestamp(),
+  `deleted_at` timestamp NULL DEFAULT NULL
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
 --

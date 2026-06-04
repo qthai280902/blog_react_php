@@ -3,7 +3,7 @@
 ## Tổng quan
 - Tên dự án: MyBlog (PHP Backend + React Frontend)
 - Ngày cập nhật gần nhất: 04/06/2026
-- Trạng thái hiện tại: Đang hoạt động tốt (Phase 4 Hoàn tất)
+- Trạng thái hiện tại: Đang hoạt động tốt (Phase 5B Hoàn tất)
 
 ## Danh sách phase
 
@@ -13,8 +13,21 @@
 | Phase 2 | 04/06/2026 | Sửa logic trang cá nhân + Redesign giao diện Profile/Home/CreatePost | **Hoàn tất** | Fix triệt để bug logic uid/id; Redesign giao diện hiện đại mượt mà |
 | Phase 3 | 04/06/2026 | Fix lỗi Media Lock, Redesign Editor & Bố cục Home tạp chí | **Hoàn tất** | Cho phép đổi avatar/cover khi bị khóa tên; Viết bài có Live Preview; Trang chủ có Hero Post & Sidebar bài viết hot |
 | Phase 4 | 04/06/2026 | Redesign toàn bộ giao diện theo hướng blog/news portal | **Hoàn tất** | Cải tổ bố cục trang chủ tạp chí, đồng bộ Navbar, PostDetail, UserProfile |
+| Phase 5 | 04/06/2026 | Sửa lỗi Repost, Tab Đã thích, Đăng nhiều ảnh, Responsive | **Hoàn tất** | Sửa logic toggle repost, thêm tab Đã thích riêng tư, cho phép hiển thị ảnh inline Base64, responsive no-scrollbar |
+| Phase 5B | 04/06/2026 | Polish giao diện ảnh inline và khu tương tác Like/Repost | **Hoàn tất** | Khống chế kích thước ảnh inline bằng CSS; Cập nhật label "Like"/"Repost", phóng to icon và làm mới nút active |
 
 ## Việc đã hoàn thành
+- [x] Tăng kích thước các biểu tượng đánh giá sao (22px), trái tim Like (28px), Repost (28px) và nút tương tác (w-14 h-14) trong `PostDetail.jsx`.
+- [x] Khống chế kích thước hình ảnh inline trong `.rich-text-content` và `.ql-editor` qua CSS để an toàn và đẹp mắt.
+- [x] Đổi nhãn tương tác thành "Like" và "Repost", nâng kích thước icon trong `PostDetail.jsx`.
+- [x] Thiết kế UI nút Like/Repost trạng thái active dạng solid màu rực rỡ kèm đổ bóng thời thượng.
+- [x] Dọn dẹp các thư mục báo cáo dư thừa, gom toàn bộ về thư mục chuẩn `.planning/.baocao/`.
+- [x] Đồng bộ hóa `blog_db.sql` và DB live thêm cột `deleted_at` vào bảng `reposts`.
+- [x] Cải tiến API `repost.php` toggle bằng soft delete / restore.
+- [x] Nâng cấp `read_public.php` và `read_single.php` tự động nhận diện và trả về trạng thái `liked`/`reposted` của user.
+- [x] Tạo API `read_liked_posts.php` để lấy danh sách bài viết đã thích riêng tư cho chính chủ.
+- [x] Cập nhật tab "Đã thích" trong profile cùng tính năng unlike động ngay trên tab card.
+- [x] Hỗ trợ và hướng dẫn đăng bài có nhiều hình ảnh inline Base64 qua editor Quill và DOMPurify.
 - [x] Sửa logic backend `update_profile.php` trả về `uid` băm đầy đủ và chặn quyền sửa chéo (trả lỗi 403).
 - [x] Sửa frontend `AuthContext.jsx` để bảo lưu `uid` băm tránh bị ghi đè thành id số.
 - [x] Đồng bộ thông tin form và kiểm soát quyền sở hữu chặt chẽ ở modal `EditProfileModal.jsx`.

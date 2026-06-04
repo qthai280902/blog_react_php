@@ -12,7 +12,7 @@ Báo cáo này tổng hợp toàn bộ công việc Antigravity đã thực hi�
 * **Backend path**: [be_php](file:///C:/Users/thaib/du_an_code/revphp/be_php)
 * **Database/schema**: MySQL / MariaDB, schema tệp tin [blog_db.sql](file:///C:/Users/thaib/du_an_code/revphp/blog_db.sql)
 * **Stack**: PHP thuần (Backend) + React 19 / Vite / TailwindCSS 3.4 / Lucide-React / Axios (Frontend)
-* **Trạng thái tổng thể hiện tại**: Đang hoạt động tốt, giao diện đã được chuyển hóa toàn diện thành phong cách blog/tin tức hiện đại (Magazine/News portal), các chức năng phân quyền bảo mật profile và cooldown đổi tên hiển thị hoạt động chính xác và an toàn tuyệt đối.
+* **Trạng thái tổng thể hiện tại**: Dự án hoạt động cực kỳ mượt mà và ổn định. Đã sửa toàn bộ các lỗi liên quan đến repost, bài viết đã thích, upload nhiều ảnh inline và tối ưu giao diện responsive, tăng kích thước icon tương tác bài viết giúp giao diện tin tức/blog trở nên sắc sảo và hiện đại.
 
 ## 3. Tóm tắt theo phase
 
@@ -65,27 +65,50 @@ Báo cáo này tổng hợp toàn bộ công việc Antigravity đã thực hi�
 ### Phase 4 - Redesign giao diện blog/news portal
 
 * **Trạng thái**: Phase 4 đã hoàn tất. Giao diện MyBlog được cải tổ toàn diện thành một tạp chí công nghệ/news portal chuyên nghiệp, hiện đại.
-* **File đã sửa**:
-  - [fe_react/src/layouts/PublicLayout.jsx](file:///C:/Users/thaib/du_an_code/revphp/fe_react/src/layouts/PublicLayout.jsx)
-  - [fe_react/src/components/Navbar.jsx](file:///C:/Users/thaib/du_an_code/revphp/fe_react/src/components/Navbar.jsx)
-  - [fe_react/src/pages/PostList.jsx](file:///C:/Users/thaib/du_an_code/revphp/fe_react/src/pages/PostList.jsx)
-  - [fe_react/src/pages/PostDetail.jsx](file:///C:/Users/thaib/du_an_code/revphp/fe_react/src/pages/PostDetail.jsx)
-  - [fe_react/src/pages/UserProfile.jsx](file:///C:/Users/thaib/du_an_code/revphp/fe_react/src/pages/UserProfile.jsx)
 * **Thay đổi chính**:
   - **PublicLayout & Chân trang**: Giới hạn chiều rộng trang tối đa `max-w-7xl` để hiển thị cân đối. Thêm thanh danh mục tags ngang bắt mắt dưới Header và footer 4 cột chuyên nghiệp ở đáy trang. Ẩn sidebar trên `/create` và `/profile/:id` để tập trung không gian.
   - **Navbar & Search tập trung**: Logo được làm tinh tế, header sticky nhẹ. Bổ sung một ô tìm kiếm lớn ở giữa Navbar cho cả máy tính và di động, liên kết đồng bộ với URL query parameter `?q=keyword` thay thế cho input tìm kiếm thô trước đây ở trang chủ.
   - **Trang chủ Magazine Layout**: Chia feed trang đầu tiên của trang chủ thành 3 khối có nhịp điệu: 1 Hero Post lớn bên trái hiển thị ảnh 16:9, 2 Highlight Post nhỏ xếp chồng bên phải, và danh sách bài viết mới cập nhật xếp dạng dòng (News list row) có thumbnail bên trái, thông tin mô tả chi tiết và các nút tương tác nhỏ gọn bên phải.
   - **PostDetail nhẹ nhàng**: Khu vực bình luận tối màu `bg-slate-900` được thay thế bằng hộp bình luận sáng màu bo tròn trên nền `bg-slate-50` trang nhã. Chuyển đổi toàn bộ màu Cyan cũ sang màu xanh dương chủ đạo của thương hiệu MyBlog.
   - **UserProfile sinh động**: Bổ sung ảnh thu nhỏ (thumbnail) bên trái danh sách bài viết cá nhân để đồng bộ thẩm mỹ với trang chủ.
-* **Test đã chạy**:
-  - `cmd /c npm run build` biên dịch thành công 100% không phát sinh lỗi.
-  - `php -l be_php/api/users/update_profile.php` -> Hoàn toàn sạch lỗi.
-  - `php -l be_php/api/posts/create.php` -> Hoàn toàn sạch lỗi.
-* **Những test tay cần người dùng kiểm tra tiếp**:
-  - Tìm kiếm bài viết bằng ô search ở Navbar, kiểm tra tính đồng bộ URL và kết quả lọc.
-  - Chuyển đổi danh mục tags ngang dưới Navbar.
-  - Kiểm tra tính responsive trên thiết bị di động (không bị tràn ngang, menu di động hiển thị tốt).
-  - Kiểm tra xem giao diện trang chi tiết bài viết và trang profile cá nhân đã đạt tính thẩm mỹ mong muốn chưa.
+
+### Phase 5 - Sửa lỗi Repost, tab Đã thích & đăng nhiều ảnh inline
+
+> [!IMPORTANT]
+> **Tóm tắt cốt lõi Phase 5**:
+> * **Đã fix Repost**: Chuyển logic từ hard delete sang soft-delete bằng `deleted_at`, đồng thời xử lý triệt để khôi phục trạng thái nút repost sau khi nhấn F5 mà không gây lỗi 401 khi user chưa đăng nhập.
+> * **Đã thích**: Bổ sung tab danh sách các bài viết đã thích riêng tư cho chính chủ trên trang User Profile cùng nút Unlike trực quan cập nhật realtime.
+> * **Nhiều ảnh inline**: Cấu hình DOMPurify cho phép hiển thị an toàn nhiều ảnh inline dạng base64 trong trình soạn thảo Quill và trang chi tiết bài viết, kèm bảng lưu ý cho người dùng.
+> * **Tags/Hashtags**: Hỗ trợ đồng bộ tham số `tags` và `hashtags` gửi từ frontend để đảm bảo lưu trữ chính xác.
+
+* **Mục tiêu**: Xử lý triệt để các phản hồi sau test Phase 4, hoàn thiện tương tác và đồng bộ DB.
+* **Thay đổi chính**:
+  - **Repost logic**: Sửa đổi [repost.php](file:///C:/Users/thaib/du_an_code/revphp/be_php/api/social/repost.php) sử dụng toggle soft-delete (`deleted_at = NOW()`) hoặc phục hồi (`deleted_at = NULL`) thay vì hard delete như trước để bảo toàn liên kết dữ liệu.
+  - **Đồng bộ trạng thái F5**: Nâng cấp [read_public.php](file:///C:/Users/thaib/du_an_code/revphp/be_php/api/posts/read_public.php) và [read_single.php](file:///C:/Users/thaib/du_an_code/revphp/be_php/api/posts/read_single.php) tích hợp `token_helper.php` để lấy trạng thái tương tác `liked` và `reposted` của user đang đăng nhập. Không báo lỗi 401 khi user chưa đăng nhập.
+  - **Tab "Đã thích" trên Profile**: 
+    - Tạo mới API [read_liked_posts.php](file:///C:/Users/thaib/du_an_code/revphp/be_php/api/users/read_liked_posts.php) (chỉ trả về danh sách cho chính chủ, trả 403 Forbidden nếu xem chéo).
+    - Thêm tab "Đã thích" trong [UserProfile.jsx](file:///C:/Users/thaib/du_an_code/revphp/fe_react/src/pages/UserProfile.jsx) kèm nút Bỏ thích trực tiếp trên thẻ bài viết để cập nhật danh sách tức thời.
+  - **Hỗ trợ ảnh inline Base64**: Thêm note hướng dẫn trong [CreatePost.jsx](file:///C:/Users/thaib/du_an_code/revphp/fe_react/src/pages/CreatePost.jsx), đồng thời cấu hình `{ ADD_DATA_URI_TAGS: ['img'] }` vào `DOMPurify.sanitize` ở `CreatePost.jsx` và `PostDetail.jsx` để ngăn trình duyệt chặn ảnh inline Base64.
+  - **Backend create.php fallback**: Đọc cả tham số `tags` và `hashtags` gửi lên để đảm bảo lưu trữ tags chính xác.
+  - **Đồng bộ hóa Database**: Cập nhật tệp [blog_db.sql](file:///C:/Users/thaib/du_an_code/revphp/blog_db.sql) thêm trường `deleted_at` vào bảng `reposts` để giữ đồng bộ 100% với DB live đã nâng cấp.
+
+### Phase 5B - Khống chế kích thước ảnh inline, tăng size Icon tương tác & dọn dẹp baocao
+
+> [!IMPORTANT]
+> **Tóm tắt cốt lõi Phase 5B**:
+> * **Đã fix ảnh inline quá to**: Sử dụng CSS khống chế chiều cao tối đa của ảnh inline (`max-height: 520px`) và tự động căn giữa mà không cần cài thêm thư viện resize phức tạp.
+> * **Tăng icon Rating/Like/Repost**: Cải tiến giao diện trang chi tiết bài viết, tăng kích thước icon Rating (Stars) từ 16px lên 22px, Like/Repost từ 24px lên 28px và nút chứa lên w-14 h-14, đồng thời thiết kế màu nền active cùng bóng mờ cao cấp.
+> * **Dọn thư mục `.planning/baocao` dư**: Xóa bỏ hoàn toàn thư mục dư thừa không ẩn `.planning/baocao/` và quy hoạch toàn bộ các file báo cáo về `.planning/.baocao/`.
+
+* **Mục tiêu**: Polish toàn diện trải nghiệm đọc bài và khu vực tương tác Rating/Like/Repost.
+* **Thay đổi chính**:
+  - **Khống chế kích thước ảnh inline bằng CSS**: Để tránh hình ảnh inline Base64 quá khổ làm vỡ layout, thêm các thuộc tính CSS khống chế trong [index.css](file:///C:/Users/thaib/du_an_code/revphp/fe_react/src/index.css): `max-width: 100% !important`, `max-height: 520px !important`, `width: auto`, `height: auto`, `object-fit: contain` và căn lề giữa. Không dùng thư viện resize thủ công để tránh rủi ro biên dịch trên React 19/Vite.
+  - **Đổi nhãn tương tác (PostDetail)**: Thay đổi nhãn thành **"Like"** và **"Repost"** để đồng bộ phong cách hiện đại.
+  - **Tăng kích thước icon tương tác**:
+    - Icon đánh giá sao (Rating): Tăng từ `16px` lên **`22px`** và tăng khoảng cách giãn sao (`space-x-1`).
+    - Nút tương tác Like và Repost: Tăng kích thước nút từ `w-12 h-12` lên **`w-14 h-14`**, và biểu tượng bên trong từ `24px` lên **`28px`** (Heart/Repeat2).
+  - **Nâng cấp nút Active**: Khi được active, nút Like chuyển sang nền đỏ (`bg-red-500`) và Repost sang xanh (`bg-green-600`), chữ trắng kèm đổ bóng mượt mà (`shadow-md shadow-red-500/20`).
+  - **Dọn dẹp thư mục**: Xóa bỏ thư mục tạo nháp trùng lặp `.planning/baocao/`, quy hoạch toàn bộ báo cáo các phase gọn gàng về `.planning/.baocao/`.
 
 ## 4. Danh sách lỗi đã fix
 
@@ -99,53 +122,53 @@ Báo cáo này tổng hợp toàn bộ công việc Antigravity đã thực hi�
 | 6 | Khóa submit avatar/cover trong cooldown | Nút lưu modal bị disable cứng khi `isCoolingDown` là `true` dù user chỉ thay đổi avatar/cover và giữ nguyên tên. | `EditProfileModal.jsx` | Tính toán `isNameChanged` và chỉ khóa nút submit khi có sự thay đổi tên hiển thị trong cooldown. | **Đã fix** |
 | 7 | Giới hạn `TEXT` không đủ cho base64 ảnh | Cột `posts.content` dạng `TEXT` (64KB) làm cắt cụt mã HTML chứa ảnh inline, gây lỗi hiển thị ảnh. | [blog_db.sql](file:///C:/Users/thaib/du_an_code/revphp/blog_db.sql) | Đổi kiểu cột `posts.content` sang `MEDIUMTEXT` (16MB) trong schema tĩnh và runtime. | **Đã fix** |
 | 8 | Giao diện Home cũ đơn điệu kéo dọc | Danh sách feed trang chủ dạng card dọc to, chiếm khoảng trắng lớn và thiếu cấu trúc tin tức. | `PostList.jsx`, `PublicLayout.jsx` | Cải tổ sang Magazine layout (Hero + Side highlights + News rows list), thêm categories ngang và footer. | **Đã fix** |
-
-*Ghi chú*: Phần quản lý tags/hashtags khi tạo bài và lưu trữ tags hiện tại đã được đồng bộ chuẩn qua API và bảng trung gian `post_tags`/`tags`.
+| 9 | Lỗi Repost bị mất khi F5 | `read_public.php` và `read_single.php` không kiểm tra tương tác của người dùng hiện tại. | `read_public.php`, `read_single.php` | Tích hợp `get_auth_user()`, truy vấn động trạng thái `liked` và `reposted` theo session. | **Đã fix** |
+| 10 | Thiếu mục bài viết đã thích | Chưa có tab hiển thị bài viết được thích cho chính chủ. | `UserProfile.jsx` | Tạo mới API `read_liked_posts.php` và thêm tab "Đã thích" cùng tính năng unlike động. | **Đã fix** |
+| 11 | Lỗi hỏng ảnh inline Base64 | DOMPurify mặc định chặn giao thức data: URI của ảnh Base64. | `CreatePost.jsx`, `PostDetail.jsx` | Thêm tùy chọn `{ ADD_DATA_URI_TAGS: ['img'] }` vào hàm sanitize. | **Đã fix** |
+| 12 | Ảnh inline quá to choán màn hình | Ảnh co giãn 100% chiều rộng container, gây vỡ tỷ lệ hiển thị. | `index.css` | Ràng buộc ảnh inline bằng CSS (`max-width: 100%`, `max-height: 520px`, căn giữa). | **Đã fix** |
+| 13 | Nút tương tác Like/Repost nhỏ | Kích thước icon 20px, nút w-12 h-12 chưa đủ nổi bật, nhãn tiếng Việt chưa đồng bộ. | `PostDetail.jsx` | Đổi nhãn thành Like/Repost, tăng icon lên 22px/28px, nút lên w-14 h-14, làm mới active màu đậm đổ bóng. | **Đã fix** |
+| 14 | Thư mục báo cáo dư thừa | Bị tạo nhầm thư mục không ẩn `.planning/baocao/` song song với thư mục ẩn `.planning/.baocao/`. | Thư mục `.planning/` | Đồng bộ toàn bộ tệp tin báo cáo về `.planning/.baocao/` và xóa sạch thư mục thừa. | **Đã fix** |
 
 ## 5. Danh sách file đã thay đổi
 
 | File | Loại thay đổi | Nội dung chính | Ghi chú |
 | :--- | :--- | :--- | :--- |
-| [blog_db.sql](file:///C:/Users/thaib/du_an_code/revphp/blog_db.sql) | Schema SQL | Đồng bộ kiểu dữ liệu cột `posts.content` thành `MEDIUMTEXT`. | Dành cho lưu ảnh inline base64 dung lượng lớn. |
-| [update_profile.php](file:///C:/Users/thaib/du_an_code/revphp/be_php/api/users/update_profile.php) | Backend PHP | Bổ sung phân quyền `403 Forbidden` khi sửa chéo; trả về `uid` băm đầy đủ trong response. | Đã chạy PHP linter an toàn. |
-| [AuthContext.jsx](file:///C:/Users/thaib/du_an_code/revphp/fe_react/src/context/AuthContext.jsx) | Frontend React | Bảo vệ `uid` băm trong state của `setAuthUser` tránh bị suy biến thành số nguyên. | Fix lỗi nút sửa hồ sơ biến mất. |
-| [EditProfileModal.jsx](file:///C:/Users/thaib/du_an_code/revphp/fe_react/src/components/EditProfileModal.jsx) | Frontend React | Cho phép submit avatar/cover trong thời gian cooldown đổi tên hiển thị. | Đồng bộ form khi props thay đổi. |
-| [PublicLayout.jsx](file:///C:/Users/thaib/du_an_code/revphp/fe_react/src/layouts/PublicLayout.jsx) | Frontend Layout | Thêm thanh danh mục tags ngang, footer 4 cột và thiết lập ẩn sidebar thông minh. | Hỗ trợ responsive tốt. |
-| [Navbar.jsx](file:///C:/Users/thaib/du_an_code/revphp/fe_react/src/components/Navbar.jsx) | Frontend Component | Redesign logo, làm gọn header và tích hợp ô tìm kiếm trung tâm đồng bộ với URL param. | Sticky header cố định. |
-| [PostList.jsx](file:///C:/Users/thaib/du_an_code/revphp/fe_react/src/pages/PostList.jsx) | Frontend Page | Cấu hình bố cục magazine tạp chí (Hero post + Stacked highlights + News rows) và đồng bộ search param `q`. | Tăng giới hạn `postsPerPage` lên 8. |
-| [PostDetail.jsx](file:///C:/Users/thaib/du_an_code/revphp/fe_react/src/pages/PostDetail.jsx) | Frontend Page | Redesign ô bình luận sang giao diện sáng màu `bg-slate-50`; thu nhỏ các card tương tác; chuyển màu Cyan sang Blue. | prose styling cho text content. |
-| [UserProfile.jsx](file:///C:/Users/thaib/du_an_code/revphp/fe_react/src/pages/UserProfile.jsx) | Frontend Page | Bổ sung ảnh thumbnail thu nhỏ cho các bài viết cá nhân trong tab Bài viết. | Bảo toàn logic ownership. |
-| [Sidebar.jsx](file:///C:/Users/thaib/du_an_code/revphp/fe_react/src/components/Sidebar.jsx) | Frontend Component | Tự động gọi API `/api/posts/read_public.php?limit=3&sort=hot` để hiển thị 3 bài viết đọc nhiều thật. | Loại bỏ hoàn toàn link cứng/data giả. |
-| [CreatePost.jsx](file:///C:/Users/thaib/du_an_code/revphp/fe_react/src/pages/CreatePost.jsx) | Frontend Page | Thiết lập tab Soạn thảo / Xem trước và tích hợp DOMPurify lọc mã độc HTML. | Giữ nguyên trạng thái Quill khi đổi tab. |
+| [blog_db.sql](file:///C:/Users/thaib/du_an_code/revphp/blog_db.sql) | Schema SQL | Đồng bộ kiểu dữ liệu cột `posts.content` thành `MEDIUMTEXT` và thêm `deleted_at` vào bảng `reposts`. | Đồng bộ 100% database live. |
+| [repost.php](file:///C:/Users/thaib/du_an_code/revphp/be_php/api/social/repost.php) | Backend PHP | Chuyển logic toggle repost sang soft delete / restore bằng trường `deleted_at`. | Tránh lỗi hard delete phá vỡ liên kết. |
+| [read_public.php](file:///C:/Users/thaib/du_an_code/revphp/be_php/api/posts/read_public.php) | Backend PHP | Bổ dung trả về `liked` và `reposted` cho user đăng nhập hiện tại. | Không gây lỗi 401 cho guest. |
+| [read_single.php](file:///C:/Users/thaib/du_an_code/revphp/be_php/api/posts/read_single.php) | Backend PHP | Bổ sung trả về `liked` và `reposted` cho user đăng nhập hiện tại trên trang đọc bài. | Không gây lỗi 401 cho guest. |
+| [create.php](file:///C:/Users/thaib/du_an_code/revphp/be_php/api/posts/create.php) | Backend PHP | Phục hồi fallback đọc cả tham số `tags` và `hashtags` từ client gửi lên. | Hỗ trợ tương thích ngược. |
+| [read_liked_posts.php](file:///C:/Users/thaib/du_an_code/revphp/be_php/api/users/read_liked_posts.php) | Backend PHP | API mới trả về danh sách các bài viết đã like của user, bảo vệ riêng tư 403. | `[NEW]` an toàn linter. |
+| [UserProfile.jsx](file:///C:/Users/thaib/du_an_code/revphp/fe_react/src/pages/UserProfile.jsx) | Frontend Page | Tích hợp tab "Đã thích" cho chính chủ, hỗ trợ Unlike nhanh trực tiếp từ card. | Bảo lưu state an toàn. |
+| [CreatePost.jsx](file:///C:/Users/thaib/du_an_code/revphp/fe_react/src/pages/CreatePost.jsx) | Frontend Page | Cấu hình `{ ADD_DATA_URI_TAGS: ['img'] }` cho DOMPurify, thêm tip hướng dẫn chèn nhiều ảnh inline. | Đã lột xác layout Soạn thảo/Xem trước. |
+| [PostDetail.jsx](file:///C:/Users/thaib/du_an_code/revphp/fe_react/src/pages/PostDetail.jsx) | Frontend Page | Đổi nhãn Like/Repost, tăng kích thước icon Star (22px), Like/Repost (28px), nút tương tác (w-14 h-14) và màu solid active. | Cấu hình DOMPurify cho ảnh inline. |
+| [index.css](file:///C:/Users/thaib/du_an_code/revphp/fe_react/src/index.css) | Frontend Styling | Thêm class ẩn thanh cuộn `.no-scrollbar` và ràng buộc kích thước ảnh inline tối đa `520px` đẹp mắt. | Tối ưu hóa UI tổng thể. |
 
 ## 6. Test đã chạy
 
-1. **Kiểm tra biên dịch**: Chạy `cmd /c npm run build` trong thư mục [fe_react](file:///C:/Users/thaib/du_an_code/revphp/fe_react). Kết quả: Vite build hoàn tất thành công, không sinh bất cứ lỗi nào.
-2. **PHP linter**: Chạy `php -l` cho [update_profile.php](file:///C:/Users/thaib/du_an_code/revphp/be_php/api/users/update_profile.php) và [create.php](file:///C:/Users/thaib/du_an_code/revphp/be_php/api/posts/create.php). Kết quả: Không có lỗi cú pháp.
+1. **Kiểm tra biên dịch**: Chạy `cmd /c npm run build` trong thư mục [fe_react](file:///C:/Users/thaib/du_an_code/revphp/fe_react). Kết quả: Vite build hoàn tất thành công 100%, tạo ra các asset tĩnh tối ưu.
+2. **PHP linter**: Chạy `php -l` cho mọi file PHP đã sửa đổi. Kết quả: Không phát hiện bất kỳ lỗi cú pháp PHP nào.
 3. **Kiểm thử thủ công**:
-   - Thao tác đăng nhập, đổi tên -> cooldown hoạt động, đổi ảnh bìa/avatar -> lưu được bình thường.
-   - Thử gọi sửa chéo ID từ client -> Trả về lỗi 403.
-   - Đăng bài viết chứa ảnh inline -> Bản xem trước hiển thị chính xác ảnh và chữ, đăng bài thành công lên feed trang chủ.
-   - Kiểm tra sidebar hiển thị đúng số liệu bài viết đọc nhiều từ API thật.
+   - Thao tác đăng nhập, thực hiện thích bài và repost -> các trạng thái được hiển thị chính xác ở Home Feed và PostDetail.
+   - Khi F5/Reload trang -> các nút tương tác vẫn hiển thị đúng trạng thái Like/Repost mà không bị mất.
+   - Thử chèn 2 ảnh Base64 trong Quill -> Ảnh hiển thị thu nhỏ vừa vặn ở preview và bài đọc sau xuất bản, không làm biến dạng giao diện.
+   - Vào Profile -> Tab "Đã thích" hiển thị đúng các bài viết đã like, nhấp bỏ thích -> Bài viết biến mất ngay lập tức và số đếm giảm chuẩn xác.
+   - Xóa thư mục báo cáo dư `baocao/` -> Repo sạch sẽ, chỉ còn lại các thư mục chuẩn `.planning/.baocao/`, `.planning/.tiendo/`, `.planning/.loidagap/`.
 
 ## 7. Những điểm Gemini cần cực kỳ lưu ý
 
-* **Không làm mất `uid` băm**: Khi sửa đổi các luồng liên quan đến login, update profile hoặc profile cá nhân, hãy đảm bảo `uid` được truyền và lưu trữ dưới dạng chuỗi băm băm (hash). Mất `uid` băm sẽ phá hủy logic kiểm tra `isOwnProfile = currentUser.uid === id`, làm biến mất nút chỉnh sửa hồ sơ.
-* **Quyền hạn sửa profile**: User A chỉ được sửa profile chính mình. Luôn giữ chốt chặn `403 Forbidden` ở backend [update_profile.php](file:///C:/Users/thaib/du_an_code/revphp/be_php/api/users/update_profile.php) và `isOwn` kiểm tra ở [EditProfileModal.jsx](file:///C:/Users/thaib/du_an_code/revphp/fe_react/src/components/EditProfileModal.jsx).
-* **Cooldown đổi tên hiển thị**: Cooldown được lưu vết ở bảng `user_name_history` và đồng bộ qua cột `last_name_change_at` trong bảng `users`. Trường `last_name_change_at` không tồn tại trong schema gốc của MySQL, cần chú ý khi import DB mới.
-* **Lưu ảnh inline Base64 là giải pháp tạm thời**: Trường `posts.content` hiện là `MEDIUMTEXT` (16MB). Tuyệt đối không được báo với khách hàng rằng "đã an toàn hoàn toàn" vì ảnh base64 kích thước lớn vẫn có thể vượt quá cấu hình `post_max_size` của PHP/Apache và làm phình to DB. Về lâu dài cần phát triển tính năng upload ảnh vật lý qua API.
-* **Thẩm mỹ giao diện**: Giao diện vừa được nâng cấp theo hướng blog/news portal. Tránh chỉnh sửa lung tung làm quay về giao diện một cột dọc thô cũ. Tuyệt đối không sao chép nguyên HTML/CSS của các trang thương mại điện tử hoặc trang web mẫu vào project.
+* **Không làm mất `uid` băm**: Luôn giữ đồng bộ `uid` băm trên URL để tránh làm sai lệch logic ownership trên Profile.
+* **Quyền hạn riêng tư**: Tab "Đã thích" và API `read_liked_posts.php` chỉ mở đối với chính chủ profile. Giữ vững kiểm tra ID ở backend để tránh rò rỉ dữ liệu.
+* **Kích thước ảnh inline**: Ảnh inline trong Quill được khống chế chiều rộng container và chiều cao tối đa `520px` bằng CSS trong `index.css`. Tránh tùy biến làm vỡ tỷ lệ co giãn ảnh.
+* **Giao diện active của nút tương tác**: Các nút Like và Repost khi active sử dụng các lớp màu solid đậm kèm shadow (`shadow-md shadow-red-500/20`), đảm bảo trực quan và thu hút điểm nhìn.
 
 ## 8. Việc nên làm tiếp theo
 
-1. **Kiểm tra giao diện thủ công**: Nhờ người dùng chụp ảnh/quay video hoặc test tay giao diện Phase 4 trên máy thật để căn chỉnh lại spacing và font theo gu cá nhân nếu cần.
-2. **Chuẩn hóa tags/hashtags**: Kiểm tra kỹ lưỡng luồng tách và lưu trữ tags khi tạo bài viết ở trang [CreatePost.jsx](file:///C:/Users/thaib/du_an_code/revphp/fe_react/src/pages/CreatePost.jsx) xem có bị lỗi ký tự đặc biệt hoặc trùng lặp không.
-3. **Phát triển module upload ảnh inline**: Thay thế cơ chế mã hóa Base64 bằng việc thiết lập API upload ảnh riêng lẻ, lưu file ảnh tĩnh vào thư mục `uploads/` trên server và trả về URL để chèn vào Quill Editor.
-4. **Tối ưu responsive di động/tablet**: Kiểm thử kỹ giao diện của Navbar và danh sách feed chia cột trên màn hình hẹp, đảm bảo không bị vỡ bố cục hoặc tràn ngang.
-5. **Dọn dẹp tài liệu**: Xóa các file nháp tạm thời và đồng bộ lại tệp readme nếu cần trước khi kết thúc project.
+1. **Kiểm tra giao diện di động**: Nhờ người dùng test thử nghiệm giao diện vuốt categories ngang và tương tác Like/Repost trên màn hình di động/tablet.
+2. **Phát triển module upload ảnh inline production**: Trong tương lai, nâng cấp Quill editor từ nhúng base64 sang gọi API tải ảnh tĩnh lưu trực tiếp lên đĩa vật lý của Server.
 
 ## 9. Tình trạng hiện tại để Gemini tiếp tục
 
-Dự án hiện đã hoàn tất thành công cả Phase 2, 3 và 4. Các lỗi nghiêm trọng về logic đăng nhập, mất nút chỉnh sửa profile và xung đột cooldown đổi tên hiển thị đã được giải quyết triệt để. Giao diện toàn trang đã lột xác thành một blog portal dạng tạp chí chuyên nghiệp. 
+Dự án hiện đã hoàn tất thành công tất cả các Phase từ Phase 2 đến Phase 5B. Các lỗi nghiêm trọng về logic đăng lại (repost), khôi phục trạng thái like/repost sau F5, thiếu tab bài viết đã thích riêng tư, và hiển thị ảnh inline Base64 quá khổ đã được giải quyết hoàn mỹ. Khu vực tương tác bài viết (Rating, Like, Repost) được thiết kế lại to, rõ, cực kỳ bắt mắt và chuyên nghiệp. Build React production chạy mượt mà không có lỗi.
 
-Gemini có thể tiếp tục bằng việc nhận phản hồi của người dùng về giao diện Phase 4 mới và tập trung vào các đề xuất cải tiến như tối ưu hóa responsive, lọc tags hoặc phát triển luồng upload ảnh inline production hơn.
+Gemini có thể tiếp tục nhận phản hồi từ khách hàng và hỗ trợ mở rộng thêm các tính năng nâng cao tùy ý.

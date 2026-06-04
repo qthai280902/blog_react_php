@@ -2,9 +2,13 @@
 
 include_once '../../config/database.php';
 include_once '../../config/id_helper.php';
+include_once '../auth/token_helper.php';
 
 $database = new Database();
 $db = $database->getConnection();
+
+$user = get_auth_user();
+$user_id = $user ? (int)$user['id'] : 0;
 
 // 1. Nhận tham số từ Request
 $tag_filter = isset($_GET['tag']) ? trim($_GET['tag']) : '';
@@ -55,7 +59,9 @@ $query = "SELECT
             GROUP_CONCAT(DISTINCT tg.name) as tags,
             AVG(r.stars) as avg_rating,
             (SELECT COUNT(*) FROM likes WHERE post_id = p.id) as total_likes,
-            (SELECT COUNT(*) FROM comments WHERE post_id = p.id) as total_comments
+            (SELECT COUNT(*) FROM comments WHERE post_id = p.id) as total_comments,
+            (SELECT COUNT(*) FROM likes WHERE post_id = p.id AND user_id = :user_id) > 0 as liked,
+            (SELECT COUNT(*) FROM reposts WHERE post_id = p.id AND user_id = :user_id AND deleted_at IS NULL) > 0 as reposted
           FROM posts p
           INNER JOIN users u ON p.user_id = u.id
           LEFT JOIN post_tags pt ON p.id = pt.post_id
@@ -85,6 +91,7 @@ foreach ($bind_params as $k => $v) {
 }
 $stmt->bindValue(':limit',  $limit,  PDO::PARAM_INT);
 $stmt->bindValue(':offset', $offset, PDO::PARAM_INT);
+$stmt->bindValue(':user_id', $user_id, PDO::PARAM_INT);
 $stmt->execute();
 
 $posts = [];
@@ -94,6 +101,8 @@ while ($row = $stmt->fetch(PDO::FETCH_ASSOC)) {
     $row['content']    = html_entity_decode($row['content']);
     $row['hot_score']  = (int)$row['total_likes'] + (int)$row['total_comments'];
     $row['author_uid'] = encodeId($row['author_id']);
+    $row['liked']      = isset($row['liked']) ? (bool)$row['liked'] : false;
+    $row['reposted']   = isset($row['reposted']) ? (bool)$row['reposted'] : false;
     $posts[] = $row;
 }
 

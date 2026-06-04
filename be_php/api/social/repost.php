@@ -22,18 +22,29 @@ if (empty($data->post_id)) {
 }
 
 // 1. Kiểm tra xem đã repost chưa (Toggle)
-$check_query = "SELECT id FROM reposts WHERE user_id = ? AND post_id = ?";
+$check_query = "SELECT id, deleted_at FROM reposts WHERE user_id = ? AND post_id = ?";
 $stmt_check = $db->prepare($check_query);
 $stmt_check->execute([$user['id'], $data->post_id]);
+$repost = $stmt_check->fetch(PDO::FETCH_ASSOC);
 
-if ($stmt_check->rowCount() > 0) {
-    // Đã repost -> Hủy Repost
-    $del_query = "DELETE FROM reposts WHERE user_id = ? AND post_id = ?";
-    $stmt_del = $db->prepare($del_query);
-    $stmt_del->execute([$user['id'], $data->post_id]);
-    
-    http_response_code(200);
-    echo json_encode(array("status" => "unreposted", "message" => "Đã hủy Repost bài viết."));
+if ($repost) {
+    if (is_null($repost['deleted_at'])) {
+        // Đã repost active -> Hủy Repost
+        $upd_query = "UPDATE reposts SET deleted_at = NOW() WHERE id = ?";
+        $stmt_upd = $db->prepare($upd_query);
+        $stmt_upd->execute([$repost['id']]);
+        
+        http_response_code(200);
+        echo json_encode(array("status" => "unreposted", "message" => "Đã hủy Repost bài viết."));
+    } else {
+        // Đang bị soft delete -> Kích hoạt lại (restore)
+        $upd_query = "UPDATE reposts SET deleted_at = NULL, is_hidden = 0 WHERE id = ?";
+        $stmt_upd = $db->prepare($upd_query);
+        $stmt_upd->execute([$repost['id']]);
+        
+        http_response_code(200);
+        echo json_encode(array("status" => "reposted", "message" => "Đã Repost bài viết về trang cá nhân!"));
+    }
 } else {
     // 2. Chưa Repost -> Thêm mới
     // Lấy origin_user_id (tác giả gốc của bài viết)

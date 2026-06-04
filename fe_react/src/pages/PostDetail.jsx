@@ -205,7 +205,7 @@ const PostDetail = () => {
             {/* Rich text body container */}
             <div 
                 className="prose prose-slate max-w-none text-slate-800 leading-[1.8] text-justify mb-10 px-2 rich-text-content"
-                dangerouslySetInnerHTML={{ __html: DOMPurify.sanitize(post.content) }}
+                dangerouslySetInnerHTML={{ __html: DOMPurify.sanitize(post.content, { ADD_DATA_URI_TAGS: ['img'] }) }}
             />
 
             {/* Attached media gallery */}
@@ -261,7 +261,7 @@ const PostDetail = () => {
                         <h3 className="text-2xl font-black text-slate-900">{post.avg_rating}</h3>
                         <span className="text-slate-300 font-bold text-sm">/ 5</span>
                     </div>
-                    <div className="flex space-x-0.5 mt-2">
+                    <div className="flex space-x-1 mt-2">
                         {[1, 2, 3, 4, 5].map((s) => (
                             <button 
                                 key={s} 
@@ -273,7 +273,7 @@ const PostDetail = () => {
                                 }`}
                             >
                                 <Star 
-                                    size={16} 
+                                    size={22} 
                                     fill={(hoverRating || userRating || Math.round(post.avg_rating)) >= s ? "currentColor" : "none"} 
                                     strokeWidth={1.5} 
                                 />
@@ -285,36 +285,36 @@ const PostDetail = () => {
                 {/* Likes card */}
                 <div className="bg-white rounded-2xl p-5 border border-slate-100 flex items-center justify-between shadow-sm/50">
                     <div>
-                        <p className="text-[9px] font-black uppercase text-slate-400 tracking-widest mb-1">Thả tim</p>
+                        <p className="text-[9px] font-black uppercase text-slate-400 tracking-widest mb-1">Like</p>
                         <h3 className="text-2xl font-black text-slate-900">{likeCount}</h3>
                     </div>
                     <button 
                         onClick={handleLike} 
-                        className={`w-12 h-12 rounded-xl flex items-center justify-center transition-all border cursor-pointer active:scale-95 ${
+                        className={`w-14 h-14 rounded-xl flex items-center justify-center transition-all border cursor-pointer active:scale-95 ${
                             liked 
-                            ? 'bg-red-50 border-red-200 text-red-500 shadow-sm shadow-red-100' 
+                            ? 'bg-red-500 border-red-500 text-white shadow-md shadow-red-500/20' 
                             : 'bg-white border-slate-200 text-slate-400 hover:border-red-300 hover:text-red-500'
                         }`}
                     >
-                        <Heart size={20} fill={liked ? "currentColor" : "none"} strokeWidth={2} />
+                        <Heart size={28} fill={liked ? "currentColor" : "none"} strokeWidth={2.5} />
                     </button>
                 </div>
 
                 {/* Repost card */}
                 <div className="bg-white rounded-2xl p-5 border border-slate-100 flex items-center justify-between shadow-sm/50">
                     <div>
-                        <p className="text-[9px] font-black uppercase text-slate-400 tracking-widest mb-1">Đăng lại</p>
-                        <h3 className="text-2xl font-black text-slate-900">{reposted ? 'Đã đăng' : 'Đăng lại'}</h3>
+                        <p className="text-[9px] font-black uppercase text-slate-400 tracking-widest mb-1">Repost</p>
+                        <h3 className="text-2xl font-black text-slate-900">{reposted ? 'Đã Repost' : 'Repost'}</h3>
                     </div>
                     <button 
                         onClick={handleRepost} 
-                        className={`w-12 h-12 rounded-xl flex items-center justify-center transition-all border cursor-pointer active:scale-95 ${
+                        className={`w-14 h-14 rounded-xl flex items-center justify-center transition-all border cursor-pointer active:scale-95 ${
                             reposted 
-                            ? 'bg-green-50 border-green-200 text-green-600 shadow-sm shadow-green-100' 
+                            ? 'bg-green-600 border-green-600 text-white shadow-md shadow-green-600/20' 
                             : 'bg-white border-slate-200 text-slate-400 hover:border-green-300 hover:text-green-600'
                         }`}
                     >
-                        <Repeat2 size={20} strokeWidth={2} />
+                        <Repeat2 size={28} strokeWidth={2.5} />
                     </button>
                 </div>
             </div>

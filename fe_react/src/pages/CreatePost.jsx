@@ -227,6 +227,13 @@ const CreatePost = () => {
                             <div className="bg-slate-50 rounded-2xl overflow-hidden border border-slate-200/80 focus-within:border-blue-500/30 transition-all shadow-inner">
                                 <div ref={editorRef} style={{ minHeight: '320px' }} className="native-quill-editor" />
                             </div>
+                            {/* Visual guide card for multiple images */}
+                            <div className="bg-blue-50/40 border border-blue-100 rounded-xl p-3.5 flex items-start gap-2.5 mt-2">
+                                <span className="text-xs">💡</span>
+                                <div className="text-[10px] font-medium text-slate-500 leading-normal">
+                                    <span className="font-bold text-blue-700">Mẹo thêm nhiều ảnh minh họa:</span> Bạn có thể chèn nhiều hình ảnh vào nội dung bài viết bằng cách bấm vào nút <b className="text-blue-700">Hình ảnh</b> (biểu tượng khung tranh) trên thanh công cụ của trình soạn thảo. Ảnh sẽ được hiển thị ngay tại vị trí con trỏ chuột.
+                                </div>
+                            </div>
                         </div>
                     </div>
 
@@ -292,7 +299,7 @@ const CreatePost = () => {
                             <div 
                                 className="prose prose-slate max-w-none text-slate-800 leading-[1.8] text-justify mb-8 px-2 rich-text-content animate-in fade-in"
                                 dangerouslySetInnerHTML={{ 
-                                    __html: content ? DOMPurify.sanitize(content) : '<p class="text-slate-300 italic">Nhập nội dung để xem trước tại đây...</p>' 
+                                    __html: content ? DOMPurify.sanitize(content, { ADD_DATA_URI_TAGS: ['img'] }) : '<p class="text-slate-300 italic">Nhập nội dung để xem trước tại đây...</p>' 
                                 }}
                             />
                         </article>

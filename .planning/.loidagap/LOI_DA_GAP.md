@@ -96,3 +96,143 @@
 **Kết quả sau khi fix:**
 - User thay đổi avatar và ảnh bìa bình thường kể cả khi bị khóa đổi tên.
 
+---
+
+### Lỗi 4: Repost không hoạt động ổn định và bị lệch trạng thái nút tương tác sau F5
+
+**Ngày gặp:** 04/06/2026
+
+**Phase:** Phase 5
+
+**Mô tả lỗi:**
+- User bấm đăng lại bài viết, hệ thống báo thành công nhưng nút đăng lại không chuyển trạng thái hoạt động lâu dài (nếu F5 sẽ bị mất hiển thị). Đồng thời, nếu bấm lại, backend chạy luồng toggle nhưng lại thực hiện hard delete, làm sai lệch trạng thái hiển thị.
+
+**File liên quan:**
+- `be_php/api/social/repost.php`
+- `be_php/api/posts/read_public.php`
+- `be_php/api/posts/read_single.php`
+
+**Nguyên nhân gốc:**
+- Do APIs lấy thông tin bài viết công khai không tích hợp bộ kiểm tra token người dùng đang đăng nhập, nên không trả về trạng thái `reposted` chuẩn. Dẫn đến khi render lại, frontend khởi tạo state `reposted = false`, làm thao tác click tiếp theo bị hiểu lầm là hủy đăng lại bằng lệnh `DELETE` của backend.
+
+**Cách fix:**
+1. Thêm bộ tích hợp `get_auth_user()` trong `read_public.php` và `read_single.php`. Truy vấn phụ `liked` và `reposted` dựa theo `user_id` hiện tại, trả về giá trị boolean chuẩn mà không chặn Guest (trả về false).
+2. Nâng cấp logic `repost.php`: Nếu đã tồn tại dòng repost trong DB nhưng ở dạng soft-deleted (`deleted_at` không null), ta khôi phục lại (`deleted_at = NULL`) thay vì insert trùng lặp. Nếu đang active, thực hiện soft-delete (`deleted_at = NOW()`).
+
+**Kết quả sau khi fix:**
+- Nút Repost đồng bộ tuyệt đối trên Home Feed và PostDetail, lưu trữ trạng thái bền vững sau khi F5.
+
+---
+
+### Lỗi 5: Thiếu tab bài viết đã thích trên profile chính chủ
+
+**Ngày gặp:** 04/06/2026
+
+**Phase:** Phase 5
+
+**Mô tả lỗi:**
+- Người dùng chưa có giao diện tổng hợp và quản lý các bài viết mà họ đã thả tim.
+
+**File liên quan:**
+- `fe_react/src/pages/UserProfile.jsx`
+- `be_php/api/users/read_liked_posts.php` [NEW]
+
+**Nguyên nhân gốc:**
+- Tính năng chưa được thiết lập ở các phase trước.
+
+**Cách fix:**
+1. Tạo mới API `read_liked_posts.php` để lấy danh sách bài viết đã thích của một `user_id` cụ thể, chỉ cho phép chủ tài khoản xem (trả về 403 cho người lạ truy cập).
+2. Thêm tab "Đã thích" trong `UserProfile.jsx` cho chính chủ, bổ sung nút Unlike trực quan ngay trên card danh sách để xóa nhanh bài khỏi tab.
+
+**Kết quả sau khi fix:**
+- Tab bài viết đã thích hoạt động mượt mà, bảo vệ riêng tư tốt và cập nhật tức thì.
+
+---
+
+### Lỗi 6: DOMPurify chặn hiển thị ảnh inline Base64 chèn bằng Quill editor
+
+**Ngày gặp:** 04/06/2026
+
+**Phase:** Phase 5
+
+**Mô tả lỗi:**
+- Người dùng chèn nhiều ảnh inline vào nội dung thông qua Quill editor, hình ảnh lưu được vào DB nhưng khi hiển thị ở tab preview (xem trước) hoặc trang chi tiết đọc bài thì ảnh bị biến mất/hỏng.
+
+**File liên quan:**
+- `fe_react/src/pages/CreatePost.jsx`
+- `fe_react/src/pages/PostDetail.jsx`
+
+**Nguyên nhân gốc:**
+- DOMPurify mặc định cấu hình bảo mật rất nghiêm ngặt, tự động loại bỏ các thuộc tính ảnh có giao thức URI dạng `data:image/...` (Base64) để chống XSS.
+
+**Cách fix:**
+- Truyền tham số `{ ADD_DATA_URI_TAGS: ['img'] }` vào hàm `DOMPurify.sanitize(...)` ở cả hai tệp JSX trên để giữ lại và hiển thị ảnh inline dạng Base64.
+
+**Kết quả sau khi fix:**
+- Người dùng chèn được nhiều ảnh minh họa inline Base64 mượt mà, hiển thị chuẩn xác ở cả màn hình preview và trang đọc bài chi tiết.
+
+---
+
+### Lỗi 7: Ảnh inline trong bài viết quá to, làm vỡ tỉ lệ hoặc choán hết màn hình
+
+**Ngày gặp:** 04/06/2026
+
+**Phase:** Phase 5B
+
+**Mô tả lỗi:**
+- Ảnh chèn trong nội dung bài viết hiển thị quá lớn, đặc biệt khi đọc trên máy tính có màn hình rộng hoặc ảnh có chiều dọc, gây choán hết không gian hiển thị và mất tính thẩm mỹ.
+
+**File liên quan:**
+- `fe_react/src/index.css`
+
+**Nguyên nhân gốc:**
+- Do các thẻ `<img>` chèn inline không được khống chế chiều cao và chiều rộng cụ thể, chỉ co giãn 100% chiều rộng của thẻ container. Việc cho phép người dùng tự resize ảnh trong editor bằng các thư viện bổ sung có độ rủi ro cao về tính tương thích với React 19 / Vite.
+
+**Cách fix:**
+- Bổ sung quy tắc CSS cố định chiều cao và chiều rộng an toàn cho ảnh inline trong `index.css`:
+  ```css
+  .rich-text-content img,
+  .ql-editor img {
+    max-width: 100% !important;
+    max-height: 520px !important;
+    width: auto !important;
+    height: auto !important;
+    object-fit: contain !important;
+    display: block !important;
+    margin: 1.5rem auto !important;
+    border-radius: 1rem !important;
+  }
+  ```
+
+**Kết quả sau khi fix:**
+- Ảnh inline hiển thị đúng kích cỡ vừa vặn, không bị méo, bo góc tinh tế và căn lề giữa cực kỳ đẹp mắt.
+
+---
+
+### Lỗi 8: Khu vực tương tác Like / Repost trên PostDetail hiển thị nhãn cũ hoặc chưa đủ rõ ràng
+
+**Ngày gặp:** 04/06/2026
+
+**Phase:** Phase 5B
+
+**Mô tả lỗi:**
+- Nhãn nút tương tác dùng từ "Thả tim" và "Đăng lại" chưa đồng bộ hiện đại, biểu tượng icon kích thước nhỏ (20px), và trạng thái đã tương tác (active) chỉ có màu nền nhạt, chưa đủ nổi bật để thu hút sự chú ý.
+
+**File liên quan:**
+- `fe_react/src/pages/PostDetail.jsx`
+
+**Nguyên nhân gốc:**
+- Bố cục UI cũ chưa được tối ưu hóa độ tương phản và kích thước điểm chạm.
+
+**Cách fix:**
+- Sửa đổi label thành "Like" và "Repost", tăng kích thước icon Lucide lần lượt lên `22px` cho Star, và `28px` cho Heart/Repost.
+- Thay đổi kích thước nút tương tác Like/Repost lên `w-14 h-14` để cân đối với icon to.
+- Thay đổi class active: khi ở trạng thái kích hoạt, nút sẽ có màu nền đậm (`bg-red-500` cho Like, `bg-green-600` cho Repost) kết hợp chữ trắng và hiệu ứng bóng đổ (`shadow-md shadow-red-500/20` hoặc `shadow-green-600/20`).
+- Thực hiện dọn dẹp thư mục báo cáo dư thừa, gom toàn bộ file báo cáo về `.planning/.baocao/`.
+
+**Kết quả sau khi fix:**
+- Khu vực tương tác cực kỳ bắt mắt, nổi bật và trực quan, dễ bấm hơn hẳn trên cả máy tính lẫn điện thoại, hoạt động chính xác 100% sau khi F5.
+- Cấu trúc thư mục quy hoạch gọn gàng, đúng chuẩn.
+
+
+
