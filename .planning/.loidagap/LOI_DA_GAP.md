@@ -234,5 +234,33 @@
 - Khu vực tương tác cực kỳ bắt mắt, nổi bật và trực quan, dễ bấm hơn hẳn trên cả máy tính lẫn điện thoại, hoạt động chính xác 100% sau khi F5.
 - Cấu trúc thư mục quy hoạch gọn gàng, đúng chuẩn.
 
+---
+
+### Lỗi 9: Quá tải CPU và Timeout hệ thống khi thực hiện seed 10,001 bot followers
+
+**Ngày gặp:** 04/06/2026
+
+**Phase:** Phase 6
+
+**Mô tả lỗi:**
+- Khi chạy script reset dữ liệu test và tạo 10,001 tài khoản bot để làm follower cho các KOL/VIP, hệ thống PHP CLI có thể bị đơ, quá tải CPU hoặc gặp lỗi cạn kiệt tài nguyên (Max Execution Time / Memory Limit).
+
+**File liên quan:**
+- `be_php/config/reset_final_test_data.php`
+
+**Nguyên nhân gốc:**
+- Sử dụng hàm `password_hash()` liên tục trong vòng lặp 10,001 lần để tạo mật khẩu riêng cho từng bot. Hàm băm `bcrypt` (`PASSWORD_DEFAULT` của PHP) được thiết kế cực kỳ tốn tài nguyên tính toán (CPU-intensive) nhằm mục đích bảo mật, khiến việc băm 10,000+ lần làm tắc nghẽn CPU. Ngoài ra, việc thực hiện 10,001 câu lệnh insert `INSERT INTO` đơn lẻ cũng tạo áp lực kết nối lớn lên MySQL.
+
+**Cách fix:**
+1. Thực hiện băm chuỗi mật khẩu `'123456'` đúng **MỘT LẦN duy nhất** ngoài vòng lặp:
+   `$hashed_password = password_hash('123456', PASSWORD_DEFAULT);`
+   Sau đó dùng chung chuỗi hash này để insert cho toàn bộ các tài khoản bot.
+2. Áp dụng kỹ thuật **Bulk Insert** (chèn hàng loạt) chia theo từng lô nhỏ (ví dụ 1,000 bản ghi mỗi lô) thay vì chèn đơn lẻ, giúp giảm thiểu tối đa số lượng truy vấn gửi tới MySQL.
+3. Thực thi chèn follows và users trong **Transaction** để tối đa hóa tốc độ ghi đĩa vật lý của Database.
+
+**Kết quả sau khi fix:**
+- Script reset dữ liệu hoạt động mượt mà, hoàn thành chèn 10,001 người dùng bot và hơn 11,000 quan hệ follows chỉ trong chưa đầy **2 giây** mà không tốn tài nguyên CPU.
+
+
 
 

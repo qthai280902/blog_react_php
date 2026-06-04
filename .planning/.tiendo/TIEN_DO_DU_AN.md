@@ -3,7 +3,7 @@
 ## Tổng quan
 - Tên dự án: MyBlog (PHP Backend + React Frontend)
 - Ngày cập nhật gần nhất: 04/06/2026
-- Trạng thái hiện tại: Đang hoạt động tốt (Phase 5B Hoàn tất)
+- Trạng thái hiện tại: Hoàn thành reset dữ liệu test (Phase 6 Hoàn tất)
 
 ## Danh sách phase
 
@@ -15,8 +15,12 @@
 | Phase 4 | 04/06/2026 | Redesign toàn bộ giao diện theo hướng blog/news portal | **Hoàn tất** | Cải tổ bố cục trang chủ tạp chí, đồng bộ Navbar, PostDetail, UserProfile |
 | Phase 5 | 04/06/2026 | Sửa lỗi Repost, Tab Đã thích, Đăng nhiều ảnh, Responsive | **Hoàn tất** | Sửa logic toggle repost, thêm tab Đã thích riêng tư, cho phép hiển thị ảnh inline Base64, responsive no-scrollbar |
 | Phase 5B | 04/06/2026 | Polish giao diện ảnh inline và khu tương tác Like/Repost | **Hoàn tất** | Khống chế kích thước ảnh inline bằng CSS; Cập nhật label "Like"/"Repost", phóng to icon và làm mới nút active |
+| Phase 6 | 04/06/2026 | Reset dữ liệu test cuối cùng | **Hoàn tất** | Dọn dẹp sạch database và tạo bộ tài khoản test với follower bot thật |
 
 ## Việc đã hoàn thành
+- [x] Chạy script PHP CLI `reset_final_test_data.php` để dọn sạch database và seed 10,001 follower bot thật cho các tài khoản test.
+- [x] Tạo file backup an toàn trước khi reset dữ liệu: `.planning/blog_db_backup_04-06-2026.sql`.
+- [x] Tạo bộ tài khoản test chuẩn xác: `admin1`/`admin2` (admin), `user10k` (10,001 followers), `user1k` (1,001 followers), `user100` (101 followers), `user1` (0 followers) với mật khẩu hash của `123456`.
 - [x] Tăng kích thước các biểu tượng đánh giá sao (22px), trái tim Like (28px), Repost (28px) và nút tương tác (w-14 h-14) trong `PostDetail.jsx`.
 - [x] Khống chế kích thước hình ảnh inline trong `.rich-text-content` và `.ql-editor` qua CSS để an toàn và đẹp mắt.
 - [x] Đổi nhãn tương tác thành "Like" và "Repost", nâng kích thước icon trong `PostDetail.jsx`.
