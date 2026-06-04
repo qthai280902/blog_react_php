@@ -1,6 +1,7 @@
 <?php
 include_once '../../config/database.php';
 include_once '../auth/token_helper.php';
+include_once '../../config/id_helper.php';
 
 $auth_user = get_auth_user();
 if (!$auth_user || empty($auth_user['id'])) {
@@ -14,6 +15,17 @@ if (isset($_POST['username']) || isset($_POST['id'])) {
     http_response_code(403);
     echo json_encode(["message" => "Lỗi bảo mật: Truy cập bất hợp pháp. Bạn không có quyền thay đổi ID hoặc Username."]);
     exit();
+}
+
+// Kiểm tra nếu request cố tình truyền tham số định danh khác để sửa user khác
+$request_id = $_POST['id'] ?? $_GET['id'] ?? $_POST['uid'] ?? $_GET['uid'] ?? null;
+if ($request_id !== null) {
+    $decoded_request_id = is_numeric($request_id) ? (int)$request_id : decodeId($request_id);
+    if ($decoded_request_id !== (int)$auth_user['id']) {
+        http_response_code(403);
+        echo json_encode(["message" => "Lỗi bảo mật: Bạn không có quyền thay đổi thông tin của người dùng khác."]);
+        exit();
+    }
 }
 
 $user_id = $auth_user['id'];
@@ -165,6 +177,11 @@ try {
     $stmt_new->bindParam(':id', $user_id);
     $stmt_new->execute();
     $updated_user = $stmt_new->fetch(PDO::FETCH_ASSOC);
+
+    if ($updated_user) {
+        $updated_user['uid'] = encodeId($updated_user['id']);
+        $updated_user['id'] = (int)$updated_user['id'];
+    }
 
     http_response_code(200);
     echo json_encode([

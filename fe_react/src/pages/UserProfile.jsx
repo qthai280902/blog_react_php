@@ -285,11 +285,11 @@ const UserProfile = () => {
     if (!profile) return <div className="text-center py-20 font-bold text-red-500 uppercase tracking-widest bg-red-50 rounded-[2rem]">404: Không tìm thấy hồ sơ</div>;
 
     return (
-        <div className="max-w-4xl mx-auto space-y-12 animate-in fade-in duration-700">
+        <div className="max-w-4xl mx-auto space-y-8 animate-in fade-in duration-500">
             {/* ── HEADER AREA ── */}
-            <div className="bg-white rounded-[3rem] shadow-sm border border-slate-100 relative overflow-hidden group mb-8">
-                {/* Ảnh bìa 16:9 phủ mờ */}
-                <div className="w-full aspect-[21/9] bg-slate-100 relative">
+            <div className="bg-white rounded-2xl shadow-[0_8px_30px_rgb(0,0,0,0.02)] border border-slate-100 relative overflow-hidden mb-6">
+                {/* Banner / Cover photo */}
+                <div className="w-full h-48 md:h-64 bg-slate-100 relative">
                     {profile?.cover_image ? (
                         <img 
                             src={`http://localhost:8000/uploads/${profile.cover_image}`} 
@@ -297,59 +297,59 @@ const UserProfile = () => {
                             className="w-full h-full object-cover"
                         />
                     ) : (
-                        <div className="w-full h-full bg-gradient-to-tr from-cyan-900 to-blue-900" />
+                        <div className="w-full h-full bg-gradient-to-r from-blue-700 via-indigo-600 to-blue-800" />
                     )}
                 </div>
 
-                <div className="px-10 pb-10 relative">
-                    {/* Avatar nổi lên đè vào cover */}
-                    <div className="flex flex-col md:flex-row items-center md:items-end gap-6 relative z-10 -mt-16 md:-mt-24 mb-6">
-                        <div className="w-32 h-32 md:w-48 md:h-48 rounded-[2.5rem] bg-white p-2 shadow-2xl flex-shrink-0">
+                <div className="px-6 md:px-8 pb-6 relative">
+                    {/* Avatar & Info Container */}
+                    <div className="flex flex-col md:flex-row items-center md:items-end gap-5 relative z-10 -mt-12 md:-mt-16 mb-5">
+                        <div className="w-24 h-24 md:w-32 md:h-32 rounded-2xl bg-white p-1.5 shadow-lg flex-shrink-0 border border-slate-100/60">
                             {profile?.avatar_image ? (
                                 <img 
                                     src={`http://localhost:8000/uploads/${profile.avatar_image}`} 
                                     alt="Avatar" 
-                                    className="w-full h-full object-cover rounded-[2rem]"
+                                    className="w-full h-full object-cover rounded-xl"
                                 />
                             ) : (
-                                <div className="w-full h-full rounded-[2rem] bg-slate-900 flex items-center justify-center text-white text-5xl font-black uppercase">
+                                <div className="w-full h-full rounded-xl bg-slate-900 flex items-center justify-center text-white text-4xl font-extrabold uppercase">
                                      <span>{(profile?.full_name || profile?.username || '?').charAt(0)}</span>
                                 </div>
                             )}
                         </div>
 
-                        {/* ── IDENTITY & ACTIONS ── */}
-                        <div className="flex-1 min-w-0">
-                            <div className="flex justify-between items-center md:items-center mt-4 md:mt-0 w-full gap-4">
-                                <div className="min-w-0 flex-1 text-center md:text-left">
-                                    <h1 className="text-2xl md:text-3xl font-black text-slate-900 tracking-tight flex items-center justify-center md:justify-start gap-3 truncate">
+                        {/* Name, Username, Badges and Buttons */}
+                        <div className="flex-1 w-full text-center md:text-left mt-2 md:mt-0">
+                            <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
+                                <div>
+                                    <h1 className="text-xl md:text-2xl font-bold text-slate-800 tracking-tight flex items-center justify-center md:justify-start gap-2">
                                         {profile?.full_name || profile?.username}
-                                        <UserBadge role={profile?.role} followers={profile?.stats?.followers || 0} size={22} />
+                                        <UserBadge role={profile?.role} followers={profile?.stats?.followers || 0} size={18} />
                                     </h1>
-                                    <p className="text-slate-500 font-bold uppercase tracking-widest text-xs mt-1">@{profile?.username}</p>
+                                    <p className="text-slate-400 font-semibold text-[11px] tracking-wider uppercase mt-0.5">@{profile?.username}</p>
                                 </div>
 
-                                <div className="flex-shrink-0">
+                                <div className="flex justify-center shrink-0">
                                     {currentUser ? (
                                         isOwnProfile ? (
-                                        <button 
-                                            onClick={() => setIsEditModalOpen(true)}
-                                            className="px-8 py-3 bg-slate-900 text-white font-black rounded-2xl hover:bg-black transition-all shadow-lg shadow-slate-900/20 active:scale-95 uppercase text-sm tracking-widest cursor-pointer"
-                                        >
-                                            Chỉnh sửa hồ sơ
-                                        </button>
-                                    ) : (
-                                        <button 
-                                            onClick={handleFollow}
-                                            disabled={followLoading}
-                                            className={`px-10 py-3 rounded-2xl font-black text-sm uppercase tracking-widest transition-all active:scale-95 disabled:opacity-50 disabled:cursor-not-allowed ${
-                                                isFollowing 
-                                                ? 'bg-slate-100 text-slate-500 border border-slate-200 hover:bg-red-50 hover:text-red-500 hover:border-red-100' 
-                                                : 'bg-blue-600 text-white shadow-xl shadow-blue-100 hover:bg-blue-700'
-                                            }`}
-                                        >
-                                            {followLoading ? 'Đang xử lý...' : (isFollowing ? 'Bỏ theo dõi' : 'Theo dõi')}
-                                        </button>
+                                            <button 
+                                                onClick={() => setIsEditModalOpen(true)}
+                                                className="px-5 py-2 bg-slate-900 hover:bg-black text-white font-bold rounded-xl shadow transition-all active:scale-95 text-xs uppercase tracking-wider cursor-pointer"
+                                            >
+                                                Chỉnh sửa hồ sơ
+                                            </button>
+                                        ) : (
+                                            <button 
+                                                onClick={handleFollow}
+                                                disabled={followLoading}
+                                                className={`px-6 py-2 rounded-xl font-bold text-xs uppercase tracking-wider transition-all active:scale-95 disabled:opacity-50 disabled:cursor-not-allowed ${
+                                                    isFollowing 
+                                                    ? 'bg-slate-100 text-slate-500 border border-slate-200 hover:bg-red-50 hover:text-red-500 hover:border-red-100' 
+                                                    : 'bg-blue-600 text-white hover:bg-blue-700 shadow-md shadow-blue-500/10'
+                                                }`}
+                                            >
+                                                {followLoading ? 'Đang xử lý...' : (isFollowing ? 'Bỏ theo dõi' : 'Theo dõi')}
+                                            </button>
                                         )
                                     ) : null}
                                 </div>
@@ -357,89 +357,105 @@ const UserProfile = () => {
                         </div>
                     </div>
 
-                    {/* Dải thống kê */}
-                    <div className="grid grid-cols-3 gap-8 pt-8 border-t border-slate-100 max-w-2xl mx-auto md:mx-0">
+                    {/* Stats details layout */}
+                    <div className="flex justify-center md:justify-start gap-8 pt-4 border-t border-slate-100">
                         <div className="text-center md:text-left">
-                            <div className="flex items-center gap-2 mb-1 text-slate-400 justify-center md:justify-start">
-                                <Users size={14} strokeWidth={2} />
-                                <span className="text-[10px] font-black uppercase tracking-widest">Followers</span>
+                            <div className="flex items-center gap-1.5 mb-0.5 text-slate-400 justify-center md:justify-start">
+                                <Users size={13} strokeWidth={2} />
+                                <span className="text-[9px] font-bold uppercase tracking-wider">Người theo dõi</span>
                             </div>
-                            <p className="text-2xl font-black text-slate-900">{profile?.stats?.followers ?? 0}</p>
+                            <p className="text-lg font-bold text-slate-800">{profile?.stats?.followers ?? 0}</p>
                         </div>
                         <div className="text-center md:text-left">
-                            <div className="flex items-center gap-2 mb-1 text-slate-400 justify-center md:justify-start">
-                                <User size={14} strokeWidth={2} />
-                                <span className="text-[10px] font-black uppercase tracking-widest">Following</span>
+                            <div className="flex items-center gap-1.5 mb-0.5 text-slate-400 justify-center md:justify-start">
+                                <User size={13} strokeWidth={2} />
+                                <span className="text-[9px] font-bold uppercase tracking-wider">Đang theo dõi</span>
                             </div>
-                            <p className="text-2xl font-black text-slate-900">{profile?.stats?.following || 0}</p>
+                            <p className="text-lg font-bold text-slate-800">{profile?.stats?.following || 0}</p>
                         </div>
                         <div className="text-center md:text-left">
-                            <div className="flex items-center gap-2 mb-1 text-slate-400 justify-center md:justify-start">
-                                <ThumbsUp size={14} strokeWidth={2} />
-                                <span className="text-[10px] font-black uppercase tracking-widest">Likes</span>
+                            <div className="flex items-center gap-1.5 mb-0.5 text-slate-400 justify-center md:justify-start">
+                                <ThumbsUp size={13} strokeWidth={2} />
+                                <span className="text-[9px] font-bold uppercase tracking-wider">Lượt thích</span>
                             </div>
-                            <p className="text-2xl font-black text-slate-900">{profile?.stats?.total_likes || 0}</p>
+                            <p className="text-lg font-bold text-slate-800">{profile?.stats?.total_likes || 0}</p>
                         </div>
                     </div>
                 </div>
             </div>
 
             {/* ── CONTENT TABS ── */}
-            <div className="space-y-8 pb-20">
-                <div className="flex space-x-8 border-b border-slate-200 pb-1 overflow-x-auto">
-                    <button onClick={() => setActiveTab('posts')} className={`text-sm font-black pb-4 uppercase tracking-widest transition-all flex-shrink-0 ${activeTab === 'posts' ? 'text-blue-600 border-b-2 border-blue-600' : 'text-slate-400 hover:text-slate-600'}`}>
-                        Posts ({posts.length})
+            <div className="space-y-6 pb-20">
+                <div className="flex space-x-6 border-b border-slate-100 pb-1 overflow-x-auto">
+                    <button 
+                        onClick={() => setActiveTab('posts')} 
+                        className={`text-xs font-bold pb-3.5 uppercase tracking-wider transition-all flex-shrink-0 cursor-pointer ${activeTab === 'posts' ? 'text-blue-600 border-b-2 border-blue-600' : 'text-slate-400 hover:text-slate-600'}`}
+                    >
+                        Bài viết ({posts.length})
                     </button>
-                    <button onClick={() => setActiveTab('reposts')} className={`text-sm font-black pb-4 uppercase tracking-widest transition-all flex-shrink-0 ${activeTab === 'reposts' ? 'text-blue-600 border-b-2 border-blue-600' : 'text-slate-400 hover:text-slate-600'}`}>
-                        My Reposts ({reposts.length})
+                    <button 
+                        onClick={() => setActiveTab('reposts')} 
+                        className={`text-xs font-bold pb-3.5 uppercase tracking-wider transition-all flex-shrink-0 cursor-pointer ${activeTab === 'reposts' ? 'text-blue-600 border-b-2 border-blue-600' : 'text-slate-400 hover:text-slate-600'}`}
+                    >
+                        Lượt đăng lại ({reposts.length})
                     </button>
                     {isOwnProfile && (
-                        <button onClick={() => setActiveTab('trash')} className={`text-sm font-black pb-4 uppercase tracking-widest transition-all flex-shrink-0 flex items-center gap-2 ${activeTab === 'trash' ? 'text-red-500 border-b-2 border-red-500' : 'text-slate-400 hover:text-slate-600'}`}>
-                            <Trash2 size={14} strokeWidth={2} /> Thùng rác
+                        <button 
+                            onClick={() => setActiveTab('trash')} 
+                            className={`text-xs font-bold pb-3.5 uppercase tracking-wider transition-all flex-shrink-0 flex items-center gap-1.5 cursor-pointer ${activeTab === 'trash' ? 'text-red-500 border-b-2 border-red-500' : 'text-slate-400 hover:text-slate-600'}`}
+                        >
+                            <Trash2 size={13} strokeWidth={2} /> Thùng rác ({trashItems.length})
                         </button>
                     )}
                 </div>
 
-                <div className="grid grid-cols-1 gap-6">
+                <div className="flex flex-col gap-4">
                     {/* ── TAB: POSTS ── */}
                     {activeTab === 'posts' && (
                         <>
                             {posts.map(post => (
-                                <div key={post.id} className="relative group/item animate-in slide-in-from-bottom-2 duration-300">
+                                <div key={post.id} className="relative group animate-in fade-in slide-in-from-bottom-2 duration-300">
                                     <Link to={`/post/${post.id}`} className="no-underline block">
-                                        <div className={`bg-white p-8 rounded-[2rem] border border-slate-100 shadow-sm group-hover/item:shadow-xl transition-all group-hover/item:-translate-y-1 relative overflow-hidden ${post.is_hidden ? 'opacity-50 border-amber-200 bg-amber-50/30' : ''}`}>
-                                            <div className="absolute right-0 top-0 p-8 text-slate-50 group-hover/item:text-blue-50 transition-colors">
-                                                <ChevronRight size={48} strokeWidth={1} />
+                                        <div className={`bg-white p-5 rounded-2xl border border-slate-100 shadow-[0_8px_30px_rgb(0,0,0,0.01)] hover:shadow-[0_8px_30px_rgb(0,0,0,0.03)] hover:border-blue-100/50 transition-all relative overflow-hidden ${post.is_hidden ? 'opacity-60 border-amber-100 bg-amber-50/20' : ''}`}>
+                                            <div className="flex gap-4 items-start">
+                                                {post.cover_image && (
+                                                    <div className="w-24 h-16 sm:w-28 sm:h-20 rounded-xl overflow-hidden shrink-0 border border-slate-100 bg-slate-50">
+                                                        <img src={`http://localhost:8000/uploads/${post.cover_image}`} className="w-full h-full object-cover" alt="" />
+                                                    </div>
+                                                )}
+                                                <div className="flex-1 min-w-0">
+                                                    {post.is_hidden > 0 && (
+                                                        <span className="inline-flex items-center gap-1 text-[8px] font-bold text-amber-600 bg-amber-50 px-2 py-0.5 rounded border border-amber-100 mb-2 uppercase tracking-wider">
+                                                            <EyeOff size={10} strokeWidth={2} /> Đang ẩn
+                                                        </span>
+                                                    )}
+                                                    <h3 className="text-base font-bold text-slate-800 group-hover:text-blue-600 mb-1.5 transition-colors pr-16 leading-snug line-clamp-1">
+                                                        {post.title}
+                                                    </h3>
+                                                    <p className="text-slate-400 text-xs line-clamp-2 leading-relaxed pr-8">
+                                                        {post.content ? post.content.replace(/<[^>]*>?/gm, '') : ''}
+                                                    </p>
+                                                </div>
                                             </div>
-                                            {/* [FIX BUG 0]: Sử dụng > 0 để tránh React in số 0 khi is_hidden = 0 */}
-                                            {post.is_hidden > 0 && (
-                                                <span className="inline-flex items-center gap-1 text-[9px] font-black text-amber-600 bg-amber-100 px-2 py-1 rounded-full mb-3 uppercase tracking-widest border border-amber-200">
-                                                    <EyeOff size={10} strokeWidth={2} /> Đang ẩn
-                                                </span>
-                                            )}
-                                            <h3 className="text-xl font-bold text-slate-900 group-hover/item:text-blue-600 mb-2 tracking-tight transition-colors">/{post.title}</h3>
-                                            <p className="text-slate-500 text-sm line-clamp-2 leading-relaxed">
-                                                {post.content ? post.content.replace(/<[^>]*>?/gm, '') : ''}
-                                            </p>
                                         </div>
                                     </Link>
 
-                                    {/* ── ACTION BUTTONS (Chỉ hiện cho chủ profile) ── */}
+                                    {/* ── ACTION BUTTONS (Chủ profile) ── */}
                                     {isOwnProfile && (
-                                        <div className="absolute top-6 right-6 flex items-center gap-2 z-10">
+                                        <div className="absolute top-5 right-5 flex items-center gap-1.5 z-10">
                                             <button
                                                 onClick={() => handleTogglePostVisibility(post.id, post.is_hidden)}
-                                                className={`p-2.5 rounded-xl transition-all shadow-sm active:scale-90 ${post.is_hidden ? 'bg-amber-500 text-white hover:bg-amber-600' : 'bg-slate-100 text-slate-400 hover:bg-blue-600 hover:text-white'}`}
+                                                className={`p-2 rounded-lg transition-all border shadow-sm active:scale-90 ${post.is_hidden ? 'bg-amber-500 text-white border-amber-500 hover:bg-amber-600' : 'bg-slate-50 text-slate-400 border-slate-100 hover:bg-blue-600 hover:text-white hover:border-blue-600'}`}
                                                 title={post.is_hidden ? "Hiện bài viết" : "Ẩn bài viết"}
                                             >
-                                                {post.is_hidden ? <Eye size={16} strokeWidth={1.5} /> : <EyeOff size={16} strokeWidth={1.5} />}
+                                                {post.is_hidden ? <Eye size={12} strokeWidth={2} /> : <EyeOff size={12} strokeWidth={2} />}
                                             </button>
                                             <button
                                                 onClick={() => handleSoftDelete(post.id)}
-                                                className="p-2.5 rounded-xl bg-slate-100 text-slate-400 hover:bg-red-500 hover:text-white transition-all shadow-sm active:scale-90"
-                                                title="Chuyển vào thùng rác"
+                                                className="p-2 rounded-lg bg-slate-50 text-slate-400 border border-slate-100 hover:bg-red-500 hover:text-white hover:border-red-500 transition-all shadow-sm active:scale-90"
+                                                title="Xóa bài viết"
                                             >
-                                                <Trash2 size={16} strokeWidth={1.5} />
+                                                <Trash2 size={12} strokeWidth={2} />
                                             </button>
                                         </div>
                                     )}
@@ -452,42 +468,41 @@ const UserProfile = () => {
                     {activeTab === 'reposts' && (
                         <>
                             {reposts.map(repost => (
-                                <div key={repost.repost_id} className="relative group/item animate-in slide-in-from-bottom-2 duration-300">
+                                <div key={repost.repost_id} className="relative group animate-in fade-in slide-in-from-bottom-2 duration-300">
                                     <Link to={`/post/${repost.id}`} className="no-underline block">
-                                        <div className={`bg-white p-8 rounded-[2rem] border border-slate-100 shadow-sm group-hover/item:shadow-xl transition-all ${repost.is_hidden ? 'opacity-50 grayscale' : ''}`}>
-                                            <div className="flex justify-between items-start mb-3">
-                                                <span className="flex items-center gap-2 text-[10px] font-black text-green-500 uppercase tracking-widest bg-green-50 px-3 py-1 rounded-full border border-green-100">
-                                                    <Repeat size={12} strokeWidth={2} /> Transmitted from @{repost.author_name}
+                                        <div className={`bg-white p-6 rounded-2xl border border-slate-100 shadow-[0_8px_30px_rgb(0,0,0,0.01)] hover:shadow-[0_8px_30px_rgb(0,0,0,0.03)] hover:border-green-100/50 transition-all ${repost.is_hidden ? 'opacity-50 grayscale' : ''}`}>
+                                            <div className="flex items-center gap-1.5 mb-2">
+                                                <span className="flex items-center gap-1 text-[8px] font-bold text-green-600 uppercase tracking-wider bg-green-50 px-2 py-0.5 rounded border border-green-100">
+                                                    <Repeat size={10} strokeWidth={2.5} /> Đăng lại từ @{repost.author_name}
                                                 </span>
                                             </div>
-                                            {/* [FIX BUG 0]: Đảm bảo không rớt số 0 khi bài viết Repost công khai */}
                                             {repost.is_hidden > 0 && (
-                                                 <span className="inline-flex items-center gap-1 text-[9px] font-black text-amber-600 bg-amber-100 px-2 py-1 rounded-full mb-3 uppercase tracking-widest border border-amber-200">
+                                                 <span className="inline-flex items-center gap-1 text-[8px] font-bold text-amber-600 bg-amber-50 px-2 py-0.5 rounded border border-amber-100 mb-2 uppercase tracking-wider">
                                                     <EyeOff size={10} strokeWidth={2} /> Đang ẩn
                                                 </span>
                                             )}
-                                            <h3 className="text-xl font-bold text-slate-900 group-hover/item:text-green-600 mb-2 transition-colors">/{repost.title}</h3>
-                                            <p className="text-slate-500 text-sm line-clamp-2 leading-relaxed">
+                                            <h3 className="text-base font-bold text-slate-800 group-hover:text-green-600 mb-1.5 transition-colors pr-16">/{repost.title}</h3>
+                                            <p className="text-slate-400 text-xs line-clamp-2 leading-relaxed pr-8">
                                                 {repost.content ? repost.content.replace(/<[^>]*>?/gm, '') : ''}
                                             </p>
                                         </div>
                                     </Link>
 
                                     {isOwnProfile && (
-                                        <div className="absolute top-6 right-6 flex items-center gap-2 z-10">
+                                        <div className="absolute top-5 right-5 flex items-center gap-1.5 z-10">
                                             <button
                                                 onClick={() => handleToggleRepostVisibility(repost.repost_id)}
-                                                className={`p-2.5 rounded-xl transition-all shadow-sm active:scale-90 ${repost.is_hidden ? 'bg-amber-500 text-white' : 'bg-slate-100 text-slate-400 hover:bg-blue-600 hover:text-white'}`}
+                                                className={`p-2 rounded-lg transition-all border shadow-sm active:scale-90 ${repost.is_hidden ? 'bg-amber-500 text-white border-amber-500' : 'bg-slate-50 text-slate-400 border-slate-100 hover:bg-blue-600 hover:text-white hover:border-blue-600'}`}
                                                 title={repost.is_hidden ? "Hiện" : "Ẩn"}
                                             >
-                                                {repost.is_hidden ? <EyeOff size={16} strokeWidth={1.5} /> : <Eye size={16} strokeWidth={1.5} />}
+                                                {repost.is_hidden ? <EyeOff size={12} strokeWidth={2} /> : <Eye size={12} strokeWidth={2} />}
                                             </button>
                                             <button
                                                 onClick={() => handleSoftDeleteRepost(repost.repost_id)}
-                                                className="p-2.5 rounded-xl bg-slate-100 text-slate-400 hover:bg-red-500 hover:text-white transition-all shadow-sm active:scale-90"
+                                                className="p-2 rounded-lg bg-slate-50 text-slate-400 border border-slate-100 hover:bg-red-500 hover:text-white hover:border-red-500 transition-all shadow-sm active:scale-90"
                                                 title="Xóa đăng lại"
                                             >
-                                                <Trash2 size={16} strokeWidth={1.5} />
+                                                <Trash2 size={12} strokeWidth={2} />
                                             </button>
                                         </div>
                                     )}
@@ -501,45 +516,45 @@ const UserProfile = () => {
                         <>
                             {trashItems.length > 0 ? (
                                 <>
-                                    <div className="bg-red-50 border border-red-100 rounded-2xl p-5 flex items-start gap-3 mb-2 animate-in fade-in duration-500">
-                                        <AlertTriangle size={20} className="text-red-500 flex-shrink-0 mt-0.5" strokeWidth={2} />
+                                    <div className="bg-red-50/50 border border-red-100 rounded-xl p-4 flex items-start gap-3 mb-2 animate-in fade-in duration-300">
+                                        <AlertTriangle size={18} className="text-red-500 flex-shrink-0 mt-0.5" strokeWidth={2} />
                                         <div>
-                                            <p className="text-sm font-bold text-red-700">Bài viết trong thùng rác sẽ bị xóa vĩnh viễn sau 30 ngày.</p>
-                                            <p className="text-xs text-red-500 mt-1">Hãy khôi phục ngay nếu bạn cần giữ lại bất kỳ nội dung nào.</p>
+                                            <p className="text-xs font-bold text-red-700">Bài viết trong thùng rác sẽ bị xóa vĩnh viễn sau 30 ngày.</p>
+                                            <p className="text-[10px] text-red-500 mt-0.5">Hãy khôi phục ngay nếu bạn cần giữ lại bất kỳ nội dung nào.</p>
                                         </div>
                                     </div>
 
                                     {trashItems.map(item => (
-                                        <div key={item.id} className="bg-white p-8 rounded-[2rem] border-2 border-dashed border-red-200 shadow-sm relative animate-in slide-in-from-bottom-2 duration-300 group">
-                                            <div className="flex items-start justify-between">
+                                        <div key={item.id} className="bg-white p-6 rounded-2xl border-2 border-dashed border-red-100 shadow-[0_8px_30px_rgb(0,0,0,0.01)] relative animate-in slide-in-from-bottom-2 duration-300 group">
+                                            <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
                                                 <div className="flex-1 min-w-0">
-                                                    <div className="flex items-center gap-3 mb-3 flex-wrap">
-                                                        <span className={`text-[10px] font-black px-3 py-1 rounded-full border border-red-100 uppercase tracking-widest flex items-center gap-1 ${item.item_type === 'repost' ? 'bg-green-50 text-green-600' : 'bg-red-50 text-red-500'}`}>
-                                                            {item.item_type === 'repost' ? <Repeat size={10} /> : <Archive size={10} />}
-                                                            {item.item_type === 'repost' ? 'Repost Deleted' : 'Post Deleted'}
+                                                    <div className="flex items-center gap-2 mb-2 flex-wrap">
+                                                        <span className={`text-[8px] font-bold px-2 py-0.5 rounded border uppercase tracking-wider flex items-center gap-1 ${item.item_type === 'repost' ? 'bg-green-50 text-green-600 border-green-100' : 'bg-red-50 text-red-500 border-red-100'}`}>
+                                                            {item.item_type === 'repost' ? <Repeat size={8} /> : <Archive size={8} />}
+                                                            {item.item_type === 'repost' ? 'Repost đã xóa' : 'Bài viết đã xóa'}
                                                         </span>
-                                                        <span className={`text-[10px] font-black px-3 py-1 rounded-full uppercase tracking-widest ${item.days_remaining <= 7 ? 'text-red-600 bg-red-100 border border-red-200' : 'text-amber-600 bg-amber-50 border border-amber-200'}`}>
+                                                        <span className={`text-[8px] font-bold px-2 py-0.5 rounded border uppercase tracking-wider ${item.days_remaining <= 7 ? 'text-red-600 bg-red-100 border-red-200' : 'text-amber-600 bg-amber-50 border-amber-200'}`}>
                                                             Còn {item.days_remaining} ngày
                                                         </span>
                                                     </div>
-                                                    <h3 className="text-xl font-bold text-slate-500 mb-2 tracking-tight line-through decoration-red-300">/{item.title}</h3>
-                                                    <p className="text-[10px] text-slate-400 font-mono">
+                                                    <h3 className="text-base font-bold text-slate-400 mb-1.5 tracking-tight line-through decoration-red-300/60">/{item.title}</h3>
+                                                    <p className="text-[9px] text-slate-400 font-mono">
                                                         Đã xóa: {new Date(item.deleted_at).toLocaleString('vi-VN')} · Tạo: {new Date(item.created_at).toLocaleString('vi-VN')}
                                                     </p>
                                                 </div>
 
-                                                <div className="flex items-center gap-2 ml-4 flex-shrink-0">
+                                                <div className="flex items-center gap-2 flex-shrink-0 w-full sm:w-auto">
                                                     <button
                                                         onClick={() => handleRestore(item.id)}
-                                                        className="flex items-center gap-1.5 px-5 py-2.5 bg-emerald-500 text-white font-black text-xs rounded-xl shadow-lg shadow-emerald-100 hover:bg-emerald-600 transition-all active:scale-95 uppercase tracking-widest"
+                                                        className="flex-1 sm:flex-initial flex items-center justify-center gap-1.5 px-4 py-2 bg-emerald-500 text-white font-bold text-[10px] rounded-lg shadow-sm hover:bg-emerald-600 transition-all active:scale-95 uppercase tracking-wider"
                                                     >
-                                                        <RotateCcw size={14} strokeWidth={2} /> Khôi phục
+                                                        <RotateCcw size={12} strokeWidth={2} /> Khôi phục
                                                     </button>
                                                     <button
                                                         onClick={() => handlePermanentDelete(item.id)}
-                                                        className="flex items-center gap-1.5 px-5 py-2.5 bg-red-500 text-white font-black text-xs rounded-xl shadow-lg shadow-red-100 hover:bg-red-600 transition-all active:scale-95 uppercase tracking-widest"
+                                                        className="flex-1 sm:flex-initial flex items-center justify-center gap-1.5 px-4 py-2 bg-red-500 text-white font-bold text-[10px] rounded-lg shadow-sm hover:bg-red-600 transition-all active:scale-95 uppercase tracking-wider"
                                                     >
-                                                        <Trash2 size={14} strokeWidth={2} /> Xóa hẳn
+                                                        <Trash2 size={12} strokeWidth={2} /> Xóa vĩnh viễn
                                                     </button>
                                                 </div>
                                             </div>
@@ -547,8 +562,8 @@ const UserProfile = () => {
                                     ))}
                                 </>
                             ) : (
-                                <div className="text-center py-20 bg-slate-50 rounded-[2rem] border-2 border-dashed border-slate-200 text-slate-300 font-mono text-[10px] uppercase tracking-[0.3em]">
-                                    Thùng rác trống // No Deleted Entities
+                                <div className="text-center py-16 bg-slate-50/50 rounded-2xl border border-slate-100 text-slate-400 font-mono text-[9px] uppercase tracking-widest">
+                                    Thùng rác trống
                                 </div>
                             )}
                         </>
@@ -556,7 +571,7 @@ const UserProfile = () => {
 
                     {/* ── EMPTY STATE (Dùng ternary để triệt tiêu số 0) ── */}
                     {((activeTab === 'posts' && posts.length === 0) || (activeTab === 'reposts' && reposts.length === 0)) ? (
-                        <div className="text-center py-20 bg-slate-50 rounded-[2rem] border-2 border-dashed border-slate-200 text-slate-300 font-mono text-[10px] uppercase tracking-[0.3em]">
+                        <div className="text-center py-16 bg-slate-50/50 rounded-2xl border border-slate-100 text-slate-400 font-mono text-[9px] uppercase tracking-widest">
                             Không có dữ liệu hiển thị
                         </div>
                     ) : null}
@@ -565,7 +580,7 @@ const UserProfile = () => {
             <EditProfileModal 
                 isOpen={isEditModalOpen} 
                 onClose={() => setIsEditModalOpen(false)} 
-                profile={profile} 
+                profile={isOwnProfile ? profile : null} 
                 token={token}
                 onSuccess={(updatedUser) => {
                     if (updatedUser) {

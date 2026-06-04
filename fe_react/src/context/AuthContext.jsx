@@ -51,7 +51,7 @@ export const AuthProvider = ({ children }) => {
         // [IDENTITY NORMALIZATION]: Luôn đảm bảo có uid để các logic isOwnProfile không bị vỡ
         const normalizedUser = { 
             ...userData, 
-            uid: userData.uid || userData.id 
+            uid: userData.uid || (user && user.uid) || userData.id 
         };
 
         localStorage.setItem('user', JSON.stringify(normalizedUser));

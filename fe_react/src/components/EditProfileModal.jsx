@@ -5,7 +5,7 @@ import axiosClient from '../api/axiosClient';
 import { AuthContext } from '../context/AuthContext';
 
 const EditProfileModal = ({ isOpen, onClose, profile, token, onSuccess }) => {
-    const { setAuthUser } = useContext(AuthContext);
+    const { user: currentUser, setAuthUser } = useContext(AuthContext);
     const [fullName, setFullName] = useState(profile?.full_name || '');
     const [avatarFile, setAvatarFile] = useState(null);
     const [coverFile, setCoverFile] = useState(null);
@@ -19,6 +19,21 @@ const EditProfileModal = ({ isOpen, onClose, profile, token, onSuccess }) => {
 
     const [isCoolingDown, setIsCoolingDown] = useState(false);
     const [timeLeftStr, setTimeLeftStr] = useState("");
+
+    const isNameChanged = fullName.trim() !== (profile?.full_name || '').trim();
+    const isSubmitDisabled = loading || (isCoolingDown && isNameChanged);
+
+    // Sync input fields when the modal opens or the profile prop changes
+    useEffect(() => {
+        if (isOpen && profile) {
+            setFullName(profile.full_name || '');
+            setAvatarPreview(profile.avatar_image ? `http://localhost:8000/uploads/${profile.avatar_image}` : '');
+            setCoverPreview(profile.cover_image ? `http://localhost:8000/uploads/${profile.cover_image}` : '');
+            setAvatarFile(null);
+            setCoverFile(null);
+            setErrorMsg('');
+        }
+    }, [isOpen, profile]);
 
     // [HÀM TÍNH TOÁN COOLDOWN LIVE]
     useEffect(() => {
@@ -70,7 +85,6 @@ const EditProfileModal = ({ isOpen, onClose, profile, token, onSuccess }) => {
         return () => clearInterval(intervalId);
     }, [profile]);
 
-    if (!isOpen) return null;
 
     const handleAvatarChange = (e) => {
         const file = e.target.files[0];
@@ -165,6 +179,10 @@ const EditProfileModal = ({ isOpen, onClose, profile, token, onSuccess }) => {
             setLoading(false);
         }
     };
+
+    const isOwn = currentUser && profile && (currentUser.uid === profile.uid || currentUser.id === profile.id);
+
+    if (!isOpen || !isOwn) return null;
 
     return (
         <div className="fixed inset-0 z-50 flex items-center justify-center p-4 sm:p-0">
@@ -270,8 +288,8 @@ const EditProfileModal = ({ isOpen, onClose, profile, token, onSuccess }) => {
                         </button>
                         <button 
                             type="submit" 
-                            disabled={loading || isCoolingDown}
-                            className={`px-8 py-3 bg-slate-900 hover:bg-black text-white font-black rounded-xl shadow-lg active:scale-95 transition-all uppercase tracking-widest text-xs flex items-center gap-2 ${(loading || isCoolingDown) && 'opacity-50 cursor-not-allowed bg-slate-300 shadow-none'}`}
+                            disabled={isSubmitDisabled}
+                            className={`px-8 py-3 bg-slate-900 hover:bg-black text-white font-black rounded-xl shadow-lg active:scale-95 transition-all uppercase tracking-widest text-xs flex items-center gap-2 ${isSubmitDisabled && 'opacity-50 cursor-not-allowed bg-slate-300 shadow-none'}`}
                         >
                             {loading ? 'Đang lưu...' : 'Cập nhật thông tin'}
                         </button>

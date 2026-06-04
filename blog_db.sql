@@ -209,7 +209,7 @@ CREATE TABLE `posts` (
   `id` int(11) NOT NULL,
   `user_id` int(11) NOT NULL,
   `title` varchar(255) NOT NULL,
-  `content` text NOT NULL,
+  `content` mediumtext NOT NULL,
   `cover_image` varchar(255) DEFAULT NULL,
   `is_hidden` tinyint(1) NOT NULL DEFAULT 0,
   `deleted_at` datetime DEFAULT NULL,
