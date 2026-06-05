@@ -1,118 +1,544 @@
 <div align="center">
-  <h1>🚀 MyBlog - Enterprise Social Platform</h1>
-  <p><i>Nền tảng chia sẻ kiến thức & Mạng xã hội chuyên gia</i></p>
-  
-  [![React](https://img.shields.io/badge/Frontend-React_18-61DAFB?style=for-the-badge&logo=react)](https://reactjs.org/)
-  [![PHP](https://img.shields.io/badge/Backend-PHP_8.2+-777BB4?style=for-the-badge&logo=php)](https://php.net/)
-  [![MySQL](https://img.shields.io/badge/Database-MySQL_8.0-4479A1?style=for-the-badge&logo=mysql)](https://mysql.com/)
-  [![Tailwind CSS](https://img.shields.io/badge/Styling-Tailwind_CSS-38B2AC?style=for-the-badge&logo=tailwind-css)](https://tailwindcss.com/)
+
+# 🚀 MyBlog
+
+### Blog & Social Platform — Nền tảng viết bài, chia sẻ kiến thức và tương tác cộng đồng
+
+<p>
+  <img src="https://img.shields.io/badge/Frontend-React_19-61DAFB?style=for-the-badge&logo=react" />
+  <img src="https://img.shields.io/badge/Backend-PHP_8.2+-777BB4?style=for-the-badge&logo=php" />
+  <img src="https://img.shields.io/badge/Database-MySQL/MariaDB-4479A1?style=for-the-badge&logo=mysql" />
+  <img src="https://img.shields.io/badge/Styling-Tailwind_CSS-38B2AC?style=for-the-badge&logo=tailwind-css" />
+  <img src="https://img.shields.io/badge/Build-Vite-646CFF?style=for-the-badge&logo=vite" />
+</p>
+
+<p>
+  <b>Write. Share. Connect.</b>
+</p>
+
 </div>
 
-<br/>
+---
 
-## 📖 Giới thiệu (Overview)
-**MyBlog** không chỉ là một blog đơn thuần, mà là một nền tảng lai (hybrid) mạng xã hội chuyên gia được kiến trúc theo tiêu chuẩn **Decoupled (Headless)**:
-- **Frontend** vận hành dưới dạng **Single Page Application (SPA)** cực nhẹ, xây dựng bằng React 18, được tối ưu UX/UI bởi Tailwind CSS.
-- **Backend** là một hệ thống **RESTful API thuần (Vanilla PHP)** siêu tốc độ, không vướng bận các framework đồ sộ, tối đa hóa hiệu năng truy xuất thông qua PDO.
+## 📌 Giới thiệu
 
-Mục tiêu cốt lõi của kiến trúc này là "Bảo vệ luồng dữ liệu - Tối ưu hóa trải nghiệm người dùng", loại bỏ hoàn toàn độ trễ ảo.
+**MyBlog** là một nền tảng blog kết hợp mạng xã hội, cho phép người dùng viết bài, chia sẻ kiến thức, theo dõi tác giả, tương tác bằng Like/Repost/Comment/Rating và xây dựng hồ sơ cá nhân.
+
+Dự án được xây dựng theo mô hình tách riêng Frontend và Backend:
+
+* **Frontend:** React + Vite + Tailwind CSS
+* **Backend:** PHP thuần dạng REST API
+* **Database:** MySQL/MariaDB
+* **UI:** Blog/News portal hiện đại với trang chủ dạng magazine layout
 
 ---
 
-## ✨ Tính năng nổi bật (Key Features)
+## ✨ Tính năng nổi bật
 
-### 1. Hệ thống User Profile V2
-- **Đa phương tiện (Media-First)**: Hỗ trợ linh hoạt ảnh đại diện tròn (Avatar) và viền toàn cảnh 16:9 (Cover Image) với quy trình nén và upload an toàn.
-- **Đồng bộ hóa Không độ trễ (Zero-Latency Sync)**: Sử dụng mô hình `Global State (Context API)`, mọi thay đổi trên form cập nhật lập tức làm mới Virtual DOM của toàn bộ Application (Navbar, Header, Card) mà không cần F5.
+### 👤 Tài khoản & phân quyền
 
-### 2. Gamification & Hệ thống Cấp bậc
-- **Phân quyền chặt chẽ (RBAC)**: Chỉ định rõ `Admin 🤖` và `User`.
-- **Huy hiệu Thành tựu (Badges)**: Tự động phân luồng huy hiệu (Đồng, Bạc, Vàng, Kim Cương) động theo số lượng follower (Trophy 🏆), kích thích người dùng cống hiến nội dung.
+* Đăng ký, đăng nhập người dùng.
+* Mật khẩu được hash an toàn.
+* Phân quyền:
 
-### 3. [Đang phát triển] Real-time Notifications ⚡
-- Thay vì dùng cơ chế Short Polling nặng nề, hệ thống được thiết kế ngầm để hỗ trợ **SSE (Server-Sent Events)**, đẩy các luồng hoạt động trực tiếp từ PHP xuống luồng sự kiện của trình duyệt.
-
----
-
-## 🛡️ Kiến trúc Bảo mật & Backend cốt lõi (Core Security)
-
-Kiến trúc Backend là **niềm kiêu hãnh** của MyBlog. Mọi lỗ hổng (vulnerabilities) đều bị khóa cứng tại lớp Database và API:
-
-1. **Giao dịch Nguyên tử (PDO Transactions)**:
-   Mọi luồng dữ liệu (Xóa cache ảnh, Lưu Audit, Thay đổi Profile) đều được cuộn kín trong Transaction (`BEGIN TRANSACTION -> COMMIT / ROLLBACK`). Nếu mất mạng hoặc đứt gãy luồng ghi vào disk, dữ liệu lập tức phục hồi về nguyên trạng, quét sạch mọi tập tin Upload rác.
-2. **Chặn Đứng Leo Thang Đặc Quyền (Anti-Privilege Escalation)**:
-   Các Input gửi lên được sanitize nghiêm ngặt. Hệ thống **ép chết** hai Key độc hại `username` và `id` ở tận màng lọc API, ngăn chặn hacker can thiệp cấu trúc Cột lõi (Core Columns).
-3. **Thiết Quân Luật: Cooldown Đổi Tên Định Danh (7-Day Limit)**:
-   - Thuật toán khóa 7 ngày ép buộc bằng truy vấn **MySQL Thời Gian Thực (`TIMESTAMPDIFF(SECOND, changed_at, NOW())`)**, loại bỏ hoàn toàn rủi ro sai lệch Múi giờ do vòng lặp PHP gây ra.
-   - Thao túng Postman gửi request liên tục sẽ bị Database Server dội ngược bằng lỗi **HTTP 429 - Too Many Requests**.
-4. **Nhật Ký Kiểm Toán (Audit Trail)**:
-   Hệ thống lưu lại mọi "phiên bản" đổi tên của người dùng (`old_name`, `new_name`, `changed_at` trong `user_name_history`). Đảm bảo dấu vết kỹ thuật số là bất khả thi để xóa mờ.
+  * `admin`
+  * `user`
+* Người dùng chỉ được chỉnh sửa hồ sơ của chính mình.
+* Backend có kiểm tra quyền để chặn sửa chéo profile.
 
 ---
 
-## 📂 Cấu trúc Thư mục (Folder Structure)
+### 🧑‍💻 Trang cá nhân
 
-Kiến trúc phân tách ranh giới rõ ràng:
-```text
-📦 MyBlog
- ┣ 📂 be_php/                     👉 [BACKEND CORE] Hệ thống RESTful API
- ┃ ┣ 📂 api/                      # Routing Controller (users, posts, auth)
- ┃ ┣ 📂 config/                   # Chuỗi kết nối PDO (database.php), JWT Secret
- ┃ ┣ 📂 uploads/                  # Vùng an toàn vật lý chứa Media
- ┃ ┗ 📜 migration_v8_fix...sql    # Kịch bản Build cấu trúc Database & Audit Log
- ┃
- ┗ 📂 fe_react/                   👉 [FRONTEND CORE] Trình diễn UI
-   ┣ 📂 src/
-   ┃ ┣ 📂 api/                    # Interceptors bọc Axios
-   ┃ ┣ 📂 components/             # Reusable UI (Navbar, EditProfileModal)
-   ┃ ┣ 📂 context/                # Trạm điều khiển LocalStorage + Global State
-   ┃ ┣ 📂 pages/                  # Router Views (UserProfile, Dashboard)
-   ┃ ┗ 📜 main.jsx                # Root Bootstrap, Injection Provider
-   ┗ 📜 package.json              # Môi trường hệ sinh thái NodeJS
+Profile người dùng hỗ trợ:
+
+* Avatar
+* Ảnh bìa
+* Tên hiển thị
+* Số bài viết
+* Số follower/following
+* Danh sách bài đã đăng
+* Danh sách bài đã Repost
+* Danh sách bài đã Like
+* Thùng rác bài viết nếu là chính chủ
+
+Cơ chế đổi tên có cooldown **7 ngày**:
+
+* Trong thời gian cooldown: không đổi được tên.
+* Vẫn đổi được avatar.
+* Vẫn đổi được ảnh bìa.
+
+---
+
+### 🏆 Follow & cúp nổi tiếng
+
+MyBlog có hệ thống theo dõi giữa người dùng.
+
+Số follower được lưu thật trong bảng `follows`, dùng để kiểm thử hệ thống cúp nổi tiếng.
+
+| Tài khoản | Followers | Mục đích                    |
+| --------- | --------: | --------------------------- |
+| `user10k` |    10.001 | Test cúp cấp cao            |
+| `user1k`  |     1.001 | Test cúp cấp trung          |
+| `user100` |       101 | Test cúp cấp thấp           |
+| `user1`   |         0 | Test tài khoản không có cúp |
+
+---
+
+### 📝 Viết bài
+
+Người dùng có thể tạo bài viết với:
+
+* Tiêu đề
+* Tags/hashtags
+* Ảnh bìa
+* Nội dung rich text
+* Nhiều ảnh inline trong bài viết
+* Tab **Soạn thảo**
+* Tab **Xem trước**
+
+Ảnh inline hiện được lưu dạng Base64 trong nội dung bài viết. Cột `posts.content` đã được nâng lên `MEDIUMTEXT` để hỗ trợ nội dung lớn hơn.
+
+> Lưu ý: Base64 inline image phù hợp cho demo/local. Nếu triển khai production, nên nâng cấp sang upload ảnh thành file và chèn URL vào bài viết.
+
+---
+
+### ❤️ Tương tác bài viết
+
+MyBlog hỗ trợ:
+
+* Like
+* Repost
+* Comment
+* Rating sao
+* Giữ trạng thái Like/Repost sau khi F5
+* Tab bài viết đã thích trong profile
+
+Nếu người dùng chưa đăng nhập, hệ thống vẫn cho xem bài viết bình thường, trạng thái Like/Repost mặc định là `false`.
+
+---
+
+### 🔁 Repost
+
+Repost hoạt động theo cơ chế toggle:
+
+* Chưa Repost → tạo Repost.
+* Đã Repost → soft delete bằng `deleted_at`.
+* Đã từng Repost nhưng đã soft delete → restore lại.
+
+Tab Repost trong profile hiển thị các bài người dùng đã đăng lại.
+
+---
+
+### 🔎 Search & Tag Filter
+
+* Search nằm trên Navbar.
+* Search đồng bộ với URL, ví dụ:
+
+```txt
+/?q=react
+```
+
+* Thanh tag/category ngang hỗ trợ lọc bài theo chủ đề.
+* Có thể search từ trang chủ, trang viết bài hoặc profile; hệ thống tự điều hướng về feed chính.
+
+---
+
+### 🎨 Giao diện Blog/News Portal
+
+Giao diện MyBlog được thiết kế theo hướng hiện đại:
+
+* Navbar sticky
+* Search bar trung tâm
+* Category/tag bar ngang
+* Trang chủ dạng magazine layout:
+
+  * Hero post lớn
+  * Highlight posts
+  * News row list
+* Sidebar:
+
+  * Từ khóa hot
+  * Bài viết đọc nhiều
+  * CTA viết bài
+* PostDetail sáng màu, dễ đọc
+* Comment box gọn gàng
+* Footer 4 cột
+* Responsive cơ bản cho desktop, tablet và mobile
+
+---
+
+## 🛠️ Công nghệ sử dụng
+
+### Frontend
+
+* React 19
+* Vite
+* Tailwind CSS
+* React Router
+* Axios
+* React Hot Toast
+* Quill Editor
+* DOMPurify
+* Lucide React Icons
+
+### Backend
+
+* PHP 8.2+
+* REST API PHP thuần
+* PDO MySQL
+* Password Hashing
+* Token helper nội bộ
+
+### Database
+
+* MySQL / MariaDB
+* Schema chính: `blog_db.sql`
+
+---
+
+## 📂 Cấu trúc thư mục
+
+```txt
+react-php/
+├── be_php/
+│   ├── api/
+│   │   ├── auth/
+│   │   ├── posts/
+│   │   ├── users/
+│   │   └── social/
+│   ├── config/
+│   └── uploads/
+│
+├── fe_react/
+│   ├── src/
+│   │   ├── api/
+│   │   ├── components/
+│   │   ├── context/
+│   │   ├── layouts/
+│   │   └── pages/
+│   └── package.json
+│
+├── .planning/
+│   ├── .baocao/
+│   ├── .tiendo/
+│   └── .loidagap/
+│
+└── blog_db.sql
 ```
 
 ---
 
-## 🚀 Hướng dẫn Cài đặt (Installation Guide)
+## ⚙️ Cài đặt dự án
 
-Để thiết lập Local, hãy tuân thủ trình tự Khởi động 3 bước:
+### 1. Clone repository
 
-#### Bước 1: Setup Database
-1. Bật **MySQL** từ XAMPP hoặc DB Engine.
-2. Tạo CSDL rỗng tên `blog_db` mang chuẩn `utf8mb4_unicode_ci`.
-3. Import các file `migration_*.sql` (Bắt buộc chạy `migration_v8_fix_history.sql` để xây dựng hàng rào kiểm toán danh tính).
+```bash
+git clone https://github.com/qthai280902/react-php.git
+cd react-php
+```
 
-#### Bước 2: Setup API Backend (PHP)
-1. Kéo toàn bộ folder vào htdocs (VD: `htdocs/revphp`).
-2. Tới file `be_php/config/database.php` và điều chỉnh chuỗi kết nối PDO cho khớp CSDL nội bộ.
-3. Đảm bảo thư mục `be_php/uploads/` có quyền **Write/Read** cho Webserver chạy ảnh.
+Hoặc nếu muốn clone về thư mục `revphp`:
 
-#### Bước 3: Build Không Gian Frontend
-1. Mở IDE Terminal, cd vào `fe_react/`:
-    ```bash
-    cd fe_react
-    npm install
-    ```
-2. Khởi chạy máy chủ ảo:
-    ```bash
-    npm run dev
-    ```
-> Server API chuẩn sẽ chạy tại `http://localhost:8000`, Server Giao diện chạy tại `http://localhost:5173`.
+```bash
+git clone https://github.com/qthai280902/react-php.git revphp
+cd revphp
+```
 
 ---
 
-## 🔌 Tóm tắt API Endpoints Tiêu Biểu
+### 2. Tạo database
 
-- `POST /api/users/update_profile.php`: 
-   - **Mục tiêu**: Nâng cấp hồ sơ bằng Multipart/form-data.
-   - **Xử lý ngầm**: Kiểm tra quyền chặn Leo thang -> So sánh Timer 7 ngày Cooldown trên Database -> Ghi file vật lý -> Transaction PDO (Update Users + Insert Audit Log) -> Dọn File Rác -> Trả về JSON Data tươi kèm JWT x2.
-- `GET /api/users/get_name_history.php`:
-   - **Mục tiêu**: Lấy lịch sử chống giả mạo cho cá nhân User đang đăng nhập, tính bằng `d/m/Y - H:i:s`.
-- `GET /api/posts/read.php`: 
-   - **Mục tiêu**: Lưới dữ liệu (Grid) cung cấp Newsfeed trang HomePage.
-- ... (Còn nữa)
+Tạo database tên `blog_db`:
+
+```sql
+CREATE DATABASE blog_db CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;
+```
+
+Import schema:
+
+```bash
+mysql -u root -p blog_db < blog_db.sql
+```
+
+Hoặc import file `blog_db.sql` bằng phpMyAdmin.
 
 ---
-<p align="center">
-  <i>Được rèn giũa và hoàn thiện bởi tiêu chuẩn <b>Enterprise level</b>. Bảo mật & Tốc độ lên hàng đầu!</i>
-</p>
+
+### 3. Cấu hình Backend
+
+Mở file:
+
+```txt
+be_php/config/database.php
+```
+
+Cấu hình lại thông tin kết nối database theo máy local:
+
+```php
+$host = 'localhost';
+$dbname = 'blog_db';
+$username = 'root';
+$password = '';
+```
+
+Nếu dùng XAMPP mặc định, mật khẩu MySQL thường để trống.
+
+---
+
+### 4. Chạy Frontend
+
+```bash
+cd fe_react
+npm install
+npm run dev
+```
+
+Build production:
+
+```bash
+npm run build
+```
+
+Trên Windows, nếu PowerShell chặn script, dùng:
+
+```bash
+cmd /c npm run build
+```
+
+---
+
+### 5. Chạy Backend
+
+Backend PHP chạy qua Apache/XAMPP hoặc server PHP local.
+
+Ví dụ nếu đặt repo trong `htdocs/react-php`, API sẽ có dạng:
+
+```txt
+http://localhost/react-php/be_php/api/...
+```
+
+Frontend cần cấu hình base URL API đúng với đường dẫn backend local.
+
+---
+
+## 🧪 Dữ liệu test cuối
+
+Dự án có script reset dữ liệu test cuối:
+
+```txt
+be_php/config/reset_final_test_data.php
+```
+
+Script này dùng để:
+
+* Xóa sạch dữ liệu cũ.
+* Xóa bài viết, like, repost, comment, rating, tags cũ.
+* Tạo lại tài khoản admin.
+* Tạo lại user test follower.
+* Tạo follower bot thật trong bảng `follows`.
+* Dùng để kiểm thử hệ thống cúp nổi tiếng.
+
+Chạy script:
+
+```bash
+php be_php/config/reset_final_test_data.php
+```
+
+> Cảnh báo: Script này chỉ dùng cho local/dev. Không chạy trên production.
+
+---
+
+## 👤 Tài khoản test
+
+Sau khi chạy script reset dữ liệu test cuối, có thể đăng nhập bằng các tài khoản sau.
+
+### Admin
+
+| Username | Password | Role  |
+| -------- | -------- | ----- |
+| `admin1` | `123456` | admin |
+| `admin2` | `123456` | admin |
+
+### User
+
+| Username  | Password | Followers |
+| --------- | -------- | --------: |
+| `user10k` | `123456` |    10.001 |
+| `user1k`  | `123456` |     1.001 |
+| `user100` | `123456` |       101 |
+| `user1`   | `123456` |         0 |
+
+---
+
+## 🧰 Script hỗ trợ
+
+### Backup database
+
+```txt
+be_php/config/backup_db.php
+```
+
+Dùng để sao lưu database trước khi reset dữ liệu.
+
+### Reset dữ liệu test
+
+```txt
+be_php/config/reset_final_test_data.php
+```
+
+Dùng để tạo lại dữ liệu sạch phục vụ test cuối.
+
+> Không chạy các script này trên production.
+
+---
+
+## 🔌 API tiêu biểu
+
+### Auth
+
+```txt
+POST /api/auth/login.php
+POST /api/auth/register.php
+```
+
+### User/Profile
+
+```txt
+POST /api/users/update_profile.php
+GET  /api/users/read_user_posts.php
+GET  /api/users/read_reposts.php
+GET  /api/users/read_liked_posts.php
+```
+
+### Posts
+
+```txt
+GET  /api/posts/read_public.php
+GET  /api/posts/read_single.php
+POST /api/posts/create.php
+```
+
+### Social
+
+```txt
+POST /api/social/repost.php
+```
+
+Tùy cấu hình local, đường dẫn đầy đủ có thể là:
+
+```txt
+http://localhost/react-php/be_php/api/...
+```
+
+---
+
+## ✅ Kiểm tra nhanh
+
+### PHP syntax
+
+```bash
+php -l be_php/api/posts/create.php
+php -l be_php/api/posts/read_public.php
+php -l be_php/api/posts/read_single.php
+php -l be_php/api/social/repost.php
+php -l be_php/api/users/update_profile.php
+php -l be_php/api/users/read_liked_posts.php
+```
+
+### Frontend build
+
+```bash
+cd fe_react
+cmd /c npm run build
+```
+
+---
+
+## 🧪 Checklist test cuối
+
+Sau khi reset dữ liệu, nên kiểm tra:
+
+```txt
+[ ] Login được admin1/admin2
+[ ] Login được user10k/user1k/user100/user1
+[ ] Cúp nổi tiếng hiển thị đúng theo follower
+[ ] Trang chủ không lỗi khi chưa có bài viết
+[ ] Tạo bài viết mới được
+[ ] Bài viết có ảnh bìa hiển thị đúng
+[ ] Bài viết có nhiều ảnh inline hiển thị đúng
+[ ] Like hoạt động và giữ trạng thái sau F5
+[ ] Repost hoạt động và giữ trạng thái sau F5
+[ ] Comment hoạt động
+[ ] Rating hoạt động
+[ ] Tab Đã thích trong profile hoạt động
+[ ] Tab Repost trong profile hoạt động
+[ ] Profile chính chủ chỉnh sửa được avatar/cover
+[ ] Profile người khác không chỉnh sửa được
+[ ] Search Navbar hoạt động
+[ ] Tag/category filter hoạt động
+[ ] Responsive không vỡ nặng
+```
+
+---
+
+## 🗂️ Tài liệu tiến độ
+
+Tài liệu theo dõi dự án nằm trong:
+
+```txt
+.planning/
+├── .baocao/
+├── .tiendo/
+└── .loidagap/
+```
+
+Trong đó:
+
+* `.planning/.baocao/`: báo cáo theo từng phase.
+* `.planning/.tiendo/TIEN_DO_DU_AN.md`: tiến độ tổng thể.
+* `.planning/.loidagap/LOI_DA_GAP.md`: lỗi đã gặp và cách xử lý.
+
+---
+
+## 📌 Trạng thái hiện tại
+
+Dự án đã hoàn thành các nhóm chính:
+
+* Sửa lỗi login và đồng bộ schema.
+* Sửa lỗi profile ownership và mất `uid`.
+* Sửa cooldown đổi tên.
+* Sửa avatar/cover bị khóa nhầm.
+* Nâng cấp giao diện blog/news portal.
+* Sửa Like/Repost.
+* Thêm tab Đã thích.
+* Hỗ trợ nhiều ảnh inline trong bài viết.
+* Reset dữ liệu test cuối để kiểm tra cúp nổi tiếng.
+
+Trạng thái hiện tại phù hợp để test tổng thể lần cuối trên môi trường local/dev.
+
+---
+
+## ⚠️ Lưu ý bảo mật và vận hành
+
+* Không chạy script reset database trên production.
+* Không commit file backup database nếu chứa dữ liệu thật.
+* Không lưu mật khẩu plain text trong database.
+* Không dùng Base64 inline image lâu dài nếu triển khai production.
+* Nên nâng cấp upload ảnh inline thành file URL trong phiên bản sau.
+
+---
+
+## 📄 Giấy phép
+
+Dự án phục vụ mục đích học tập, thực hành và phát triển nội bộ.
+
+---
+
+<div align="center">
+
+### MyBlog
+
+<i>Write. Share. Connect.</i>
+
+</div>
