@@ -2,8 +2,8 @@
 
 ## Tổng quan
 - Tên dự án: MyBlog (PHP Backend + React Frontend)
-- Ngày cập nhật gần nhất: 04/06/2026
-- Trạng thái hiện tại: Hoàn thành reset dữ liệu test (Phase 6 Hoàn tất)
+- Ngày cập nhật gần nhất: 05/06/2026
+- Trạng thái hiện tại: Hoàn thành Hotfix Phase 7D (Trash 100%, Xóa bình luận 100%, CORS 100%)
 
 ## Danh sách phase
 
@@ -16,8 +16,19 @@
 | Phase 5 | 04/06/2026 | Sửa lỗi Repost, Tab Đã thích, Đăng nhiều ảnh, Responsive | **Hoàn tất** | Sửa logic toggle repost, thêm tab Đã thích riêng tư, cho phép hiển thị ảnh inline Base64, responsive no-scrollbar |
 | Phase 5B | 04/06/2026 | Polish giao diện ảnh inline và khu tương tác Like/Repost | **Hoàn tất** | Khống chế kích thước ảnh inline bằng CSS; Cập nhật label "Like"/"Repost", phóng to icon và làm mới nút active |
 | Phase 6 | 04/06/2026 | Reset dữ liệu test cuối cùng | **Hoàn tất** | Dọn dẹp sạch database và tạo bộ tài khoản test với follower bot thật |
+| Phase 7 | 05/06/2026 | Hoàn thiện content flow, Trash, Comments, Notifications & Admin | **Hoàn tất** | Bổ sung Excerpt, fix Trash ID decoding, comment lồng 1 cấp & phân quyền xóa, chuông thông báo (Bell dropdown), Server-side pagination Admin, và polish nút bấm. |
+| Phase 7B | 05/06/2026 | Hotfix sau test Phase 7 (Nút đen, Trash, Comments, Notifications) | **Hoàn tất** | Khắc phục các lỗi nút đen, thùng rác không đồng bộ count, xóa bình luận bị chặn FK, logic reply 1 lần và redesign dropdown UI thông báo. |
+| Phase 7C | 05/06/2026 | Hotfix Bắt buộc: Trash 0% + Delete Comment 0% | **Hoàn tất** | Khắc phục triệt để lỗi Thùng rác (sửa logic check isOwnProfile hỗ trợ cả URL ID số/chữ băm và load token động) và lỗi Xóa bình luận (bảo vệ PHP input tránh warning). |
+| Phase 7D | 05/06/2026 | Hotfix Thực tế: CORS Delete Comment + Trash.php Response 0B | **Hoàn tất** | Khắc phục triệt để lỗi CORS preflight bằng cách di chuyển include database.php lên đầu và gỡ bỏ exit sớm. |
 
 ## Việc đã hoàn thành
+- [x] Loại bỏ hoàn toàn các nút/tab màu đen còn sót ở Navbar dropdown, UserProfile tabs, EditProfileModal và ConfirmModal.
+- [x] Khắc phục lỗi Thùng rác: gọi fetchTrash() ở mount, load lại thùng rác sau khi soft-delete/khôi phục/xóa vĩnh viễn, truyền tham số item_type cho repost.
+- [x] Khắc phục lỗi Xóa bình luận: cập nhật comments/delete.php xóa tuần tự thông báo và các reply con trước khi xóa comment để tránh lỗi foreign key constraint.
+- [x] Khắc phục lỗi Phản hồi bình luận: sửa crash 500 khi thông báo, đồng thời hiển thị avatar thật của commenter.
+- [x] Thiết kế lại giao diện comment replies: thụt lề, có viền xanh dương trái, nền xám nhạt và nhãn "Phản hồi".
+- [x] Polish dropdown chuông thông báo: nâng width lên 380px, đổi tab sang dạng pill nền xám/active trắng shadow, hiển thị badge số unread có nhịp đập, làm mịn scrollbar.
+- [x] Chạy build frontend Vite (npm run build) và lint backend PHP (php -l) thành công.
 - [x] Chạy script PHP CLI `reset_final_test_data.php` để dọn sạch database và seed 10,001 follower bot thật cho các tài khoản test.
 - [x] Tạo file backup an toàn trước khi reset dữ liệu: `.planning/blog_db_backup_04-06-2026.sql`.
 - [x] Tạo bộ tài khoản test chuẩn xác: `admin1`/`admin2` (admin), `user10k` (10,001 followers), `user1k` (1,001 followers), `user100` (101 followers), `user1` (0 followers) với mật khẩu hash của `123456`.
@@ -49,6 +60,9 @@
 - [x] Refine giao diện đọc bài `PostDetail.jsx` với khối bình luận sáng màu đồng điệu và thu nhỏ các widget tương tác.
 - [x] Cải tiến giao diện cá nhân `UserProfile.jsx` bổ sung ảnh thu nhỏ (thumbnail) cho danh sách bài viết.
 - [x] Đã tạo tệp báo cáo bàn giao chi tiết cho Gemini: `.planning/.baocao/bao-cao-ban-giao-cho-gemini-04-06-2026.md`
+- [x] Khắc phục lỗi CORS preflight trên comments/delete.php bằng cách di chuyển database.php include lên đầu.
+- [x] Khắc phục lỗi trash.php response 0B bằng cách đồng bộ preflight OPTIONS và CORS headers.
+- [x] Đưa tất cả các include liên quan về dạng absolute sử dụng __DIR__ để loại bỏ rủi ro về CWD.
 
 ## Việc đang làm
 - Không có.

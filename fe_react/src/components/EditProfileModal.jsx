@@ -281,7 +281,7 @@ const EditProfileModal = ({ isOpen, onClose, profile, token, onSuccess }) => {
                         <button 
                             type="button" 
                             onClick={onClose}
-                            className="px-6 py-3 rounded-xl font-bold text-slate-500 hover:bg-slate-100 transition-colors uppercase tracking-widest text-xs"
+                            className="px-6 py-3 rounded-xl font-bold text-slate-600 bg-slate-100 hover:bg-slate-200 transition-all uppercase tracking-widest text-xs border-0 cursor-pointer"
                             disabled={loading}
                         >
                             Hủy bỏ
@@ -289,7 +289,7 @@ const EditProfileModal = ({ isOpen, onClose, profile, token, onSuccess }) => {
                         <button 
                             type="submit" 
                             disabled={isSubmitDisabled}
-                            className={`px-8 py-3 bg-slate-900 hover:bg-black text-white font-black rounded-xl shadow-lg active:scale-95 transition-all uppercase tracking-widest text-xs flex items-center gap-2 ${isSubmitDisabled && 'opacity-50 cursor-not-allowed bg-slate-300 shadow-none'}`}
+                            className={`px-8 py-3 bg-blue-600 hover:bg-blue-700 text-white font-black rounded-xl shadow-md active:scale-95 transition-all uppercase tracking-widest text-xs flex items-center gap-2 border-0 cursor-pointer ${isSubmitDisabled && 'opacity-50 cursor-not-allowed bg-slate-300 shadow-none'}`}
                         >
                             {loading ? 'Đang lưu...' : 'Cập nhật thông tin'}
                         </button>

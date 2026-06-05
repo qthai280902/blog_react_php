@@ -42,7 +42,11 @@ const UserProfile = () => {
         }
     }, [token, navigate]);
 
-    const isOwnProfile = currentUser?.uid === id;
+    const isOwnProfile = currentUser && (
+        currentUser.uid === id || 
+        String(currentUser.id) === String(id) ||
+        (profile && (String(profile.id) === String(currentUser.id) || profile.uid === currentUser.uid))
+    );
     const [followLoading, setFollowLoading] = useState(false);
 
     useEffect(() => {
@@ -57,10 +61,15 @@ const UserProfile = () => {
         fetchProfile();
         fetchUserPosts();
         fetchUserReposts();
+    }, [id, navigate]); // BẮT BUỘC: id trong dependency array để fix lỗi cache component khi nhảy profile
+
+    // Tự động tải dữ liệu cá nhân (Thùng rác, Đã thích) khi xác nhận chính chủ
+    useEffect(() => {
         if (isOwnProfile) {
             fetchLikedPosts();
+            fetchTrash();
         }
-    }, [id, navigate, isOwnProfile]); // BẮT BUỘC: id trong dependency array để fix lỗi cache component khi nhảy profile
+    }, [isOwnProfile]);
 
     useEffect(() => {
         if (isOwnProfile) {
@@ -97,8 +106,9 @@ const UserProfile = () => {
 
     const fetchUserPosts = async () => {
         try {
+            const currentToken = localStorage.getItem('token');
             const res = await axiosClient.get(`/api/posts/read_user_posts.php?user_id=${id}`, {
-                headers: token ? { 'Authorization': 'Bearer ' + token } : {}
+                headers: currentToken ? { 'Authorization': 'Bearer ' + currentToken } : {}
             });
             // [BỐC TÁCH AN TOÀN]: API trả về { status: 'success', data: [...] }
             const postData = res?.data || res;
@@ -111,8 +121,9 @@ const UserProfile = () => {
 
     const fetchUserReposts = async () => {
         try {
+            const currentToken = localStorage.getItem('token');
             const res = await axiosClient.get(`/api/users/read_reposts.php?user_id=${id}`, {
-                headers: { 'Authorization': 'Bearer ' + token }
+                headers: currentToken ? { 'Authorization': 'Bearer ' + currentToken } : {}
             });
             // [BỐC TÁCH AN TOÀN]: API trả về { status: 'success', data: [...] }
             const repostData = res?.data || res;
@@ -125,8 +136,9 @@ const UserProfile = () => {
 
     const fetchTrash = async () => {
         try {
+            const currentToken = localStorage.getItem('token');
             const data = await axiosClient.get('/api/posts/trash.php', {
-                headers: { 'Authorization': 'Bearer ' + token }
+                headers: currentToken ? { 'Authorization': 'Bearer ' + currentToken } : {}
             });
             setTrashItems(data.trash || []);
         } catch (err) {
@@ -137,8 +149,9 @@ const UserProfile = () => {
 
     const fetchLikedPosts = async () => {
         try {
+            const currentToken = localStorage.getItem('token');
             const res = await axiosClient.get(`/api/users/read_liked_posts.php?user_id=${id}`, {
-                headers: token ? { 'Authorization': 'Bearer ' + token } : {}
+                headers: currentToken ? { 'Authorization': 'Bearer ' + currentToken } : {}
             });
             const likedData = res?.data || res;
             setLikedPosts(Array.isArray(likedData) ? likedData : []);
@@ -253,6 +266,7 @@ const UserProfile = () => {
                     );
                     setPosts(posts.filter(p => p.id !== postId));
                     toast.success(res.message);
+                    fetchTrash(); // Cập nhật danh sách Thùng rác & Badge
                 } catch (err) {
                     toast.error(err.response?.data?.message || "Lỗi khi xóa bài viết.");
                 }
@@ -274,6 +288,7 @@ const UserProfile = () => {
                     });
                     setReposts(reposts.filter(r => r.repost_id !== repostId));
                     toast.success("Đã chuyển vào thùng rác.");
+                    fetchTrash(); // Cập nhật danh sách Thùng rác & Badge
                 } catch (err) {
                     toast.error(err.response?.data?.message || "Lỗi khi xóa lượt đăng lại.");
                 }
@@ -281,35 +296,43 @@ const UserProfile = () => {
         });
     };
 
-    const handleRestore = async (postId) => {
+    const handleRestore = async (postId, itemType = 'post') => {
         try {
             const res = await axiosClient.post('/api/posts/restore.php',
-                { post_id: postId },
+                { post_id: postId, item_type: itemType },
                 { headers: { 'Authorization': 'Bearer ' + token } }
             );
             setTrashItems(trashItems.filter(t => t.id !== postId));
             toast.success(res.message);
-            fetchUserPosts(); // Refresh danh sách bài viết
+            fetchTrash(); // Sync lại count
+            if (itemType === 'repost') {
+                fetchUserReposts();
+            } else {
+                fetchUserPosts();
+            }
         } catch (err) {
             toast.error(err.response?.data?.message || "Lỗi khi khôi phục.");
         }
     };
 
-    const handlePermanentDelete = (postId) => {
+    const handlePermanentDelete = (postId, itemType = 'post') => {
         setConfirmState({
             isOpen: true,
             title: "XÓA VĨNH VIỄN",
-            message: "⚠️ CẢNH BÁO: Hành động này KHÔNG THỂ hoàn tác! Bài viết và TẤT CẢ hình ảnh sẽ bị xóa vĩnh viễn.",
+            message: itemType === 'repost'
+                ? "⚠️ CẢNH BÁO: Hành động này KHÔNG THỂ hoàn tác! Lượt đăng lại này sẽ bị xóa vĩnh viễn khỏi hệ thống."
+                : "⚠️ CẢNH BÁO: Hành động này KHÔNG THỂ hoàn tác! Bài viết và TẤT CẢ hình ảnh sẽ bị xóa vĩnh viễn.",
             type: "danger",
             onConfirm: async () => {
                 setConfirmState(prev => ({ ...prev, isOpen: false }));
                 try {
                     const res = await axiosClient.post('/api/posts/permanent_delete.php',
-                        { post_id: postId },
+                        { post_id: postId, item_type: itemType },
                         { headers: { 'Authorization': 'Bearer ' + token } }
                     );
                     setTrashItems(trashItems.filter(t => t.id !== postId));
                     toast.success(res.message);
+                    fetchTrash(); // Sync lại count
                 } catch (err) {
                     toast.error(err.response?.data?.message || "Lỗi khi xóa vĩnh viễn.");
                 }
@@ -348,7 +371,7 @@ const UserProfile = () => {
                                     className="w-full h-full object-cover rounded-xl"
                                 />
                             ) : (
-                                <div className="w-full h-full rounded-xl bg-slate-900 flex items-center justify-center text-white text-4xl font-extrabold uppercase">
+                                <div className="w-full h-full rounded-xl bg-gradient-to-tr from-slate-700 to-slate-800 flex items-center justify-center text-white text-4xl font-extrabold uppercase shadow-inner">
                                      <span>{(profile?.full_name || profile?.username || '?').charAt(0)}</span>
                                 </div>
                             )}
@@ -370,7 +393,7 @@ const UserProfile = () => {
                                         isOwnProfile ? (
                                             <button 
                                                 onClick={() => setIsEditModalOpen(true)}
-                                                className="px-5 py-2 bg-slate-900 hover:bg-black text-white font-bold rounded-xl shadow transition-all active:scale-95 text-xs uppercase tracking-wider cursor-pointer"
+                                                className="px-5 py-2.5 bg-blue-600 hover:bg-blue-700 text-white font-bold rounded-xl shadow-md shadow-blue-500/10 border-0 transition-all active:scale-95 text-xs uppercase tracking-wider cursor-pointer"
                                             >
                                                 Chỉnh sửa hồ sơ
                                             </button>
@@ -378,7 +401,7 @@ const UserProfile = () => {
                                             <button 
                                                 onClick={handleFollow}
                                                 disabled={followLoading}
-                                                className={`px-6 py-2 rounded-xl font-bold text-xs uppercase tracking-wider transition-all active:scale-95 disabled:opacity-50 disabled:cursor-not-allowed ${
+                                                className={`px-6 py-2.5 rounded-xl font-bold text-xs uppercase tracking-wider transition-all active:scale-95 disabled:opacity-50 disabled:cursor-not-allowed border-0 cursor-pointer ${
                                                     isFollowing 
                                                     ? 'bg-slate-100 text-slate-500 border border-slate-200 hover:bg-red-50 hover:text-red-500 hover:border-red-100' 
                                                     : 'bg-blue-600 text-white hover:bg-blue-700 shadow-md shadow-blue-500/10'
@@ -422,23 +445,35 @@ const UserProfile = () => {
 
             {/* ── CONTENT TABS ── */}
             <div className="space-y-6 pb-20">
-                <div className="flex space-x-6 border-b border-slate-100 pb-1 overflow-x-auto">
+                <div className="flex flex-wrap gap-2.5 border-b border-slate-100 pb-4">
                     <button 
                         onClick={() => setActiveTab('posts')} 
-                        className={`text-xs font-bold pb-3.5 uppercase tracking-wider transition-all flex-shrink-0 cursor-pointer ${activeTab === 'posts' ? 'text-blue-600 border-b-2 border-blue-600' : 'text-slate-400 hover:text-slate-600'}`}
+                        className={`text-xs font-bold px-4 py-2.5 rounded-xl transition-all flex-shrink-0 cursor-pointer flex items-center gap-1.5 border-0 ${
+                            activeTab === 'posts' 
+                                ? 'bg-blue-600 text-white shadow-md shadow-blue-500/25' 
+                                : 'bg-slate-50 text-slate-600 border border-slate-200/60 hover:bg-blue-50 hover:text-blue-700 hover:border-blue-200/50'
+                        }`}
                     >
                         Bài viết ({posts.length})
                     </button>
                     <button 
                         onClick={() => setActiveTab('reposts')} 
-                        className={`text-xs font-bold pb-3.5 uppercase tracking-wider transition-all flex-shrink-0 cursor-pointer ${activeTab === 'reposts' ? 'text-blue-600 border-b-2 border-blue-600' : 'text-slate-400 hover:text-slate-600'}`}
+                        className={`text-xs font-bold px-4 py-2.5 rounded-xl transition-all flex-shrink-0 cursor-pointer flex items-center gap-1.5 border-0 ${
+                            activeTab === 'reposts' 
+                                ? 'bg-blue-600 text-white shadow-md shadow-blue-500/25' 
+                                : 'bg-slate-50 text-slate-600 border border-slate-200/60 hover:bg-blue-50 hover:text-blue-700 hover:border-blue-200/50'
+                        }`}
                     >
                         Lượt đăng lại ({reposts.length})
                     </button>
                     {isOwnProfile && (
                         <button 
                             onClick={() => setActiveTab('liked')} 
-                            className={`text-xs font-bold pb-3.5 uppercase tracking-wider transition-all flex-shrink-0 flex items-center gap-1.5 cursor-pointer ${activeTab === 'liked' ? 'text-pink-600 border-b-2 border-pink-600' : 'text-slate-400 hover:text-slate-600'}`}
+                            className={`text-xs font-bold px-4 py-2.5 rounded-xl transition-all flex-shrink-0 flex items-center gap-1.5 border-0 cursor-pointer ${
+                                activeTab === 'liked' 
+                                    ? 'bg-pink-600 text-white shadow-md shadow-pink-500/25' 
+                                    : 'bg-slate-50 text-slate-600 border border-slate-200/60 hover:bg-pink-50 hover:text-pink-700 hover:border-pink-200/50'
+                            }`}
                         >
                             <Heart size={13} strokeWidth={2} /> Đã thích ({likedPosts.length})
                         </button>
@@ -446,7 +481,11 @@ const UserProfile = () => {
                     {isOwnProfile && (
                         <button 
                             onClick={() => setActiveTab('trash')} 
-                            className={`text-xs font-bold pb-3.5 uppercase tracking-wider transition-all flex-shrink-0 flex items-center gap-1.5 cursor-pointer ${activeTab === 'trash' ? 'text-red-500 border-b-2 border-red-500' : 'text-slate-400 hover:text-slate-600'}`}
+                            className={`text-xs font-bold px-4 py-2.5 rounded-xl transition-all flex-shrink-0 flex items-center gap-1.5 border-0 cursor-pointer ${
+                                activeTab === 'trash' 
+                                    ? 'bg-red-500 text-white shadow-md shadow-red-500/25' 
+                                    : 'bg-slate-50 text-slate-600 border border-slate-200/60 hover:bg-red-50 hover:text-red-700 hover:border-red-200/50'
+                            }`}
                         >
                             <Trash2 size={13} strokeWidth={2} /> Thùng rác ({trashItems.length})
                         </button>
@@ -477,7 +516,7 @@ const UserProfile = () => {
                                                         {post.title}
                                                     </h3>
                                                     <p className="text-slate-400 text-xs line-clamp-2 leading-relaxed pr-8">
-                                                        {post.content ? post.content.replace(/<[^>]*>?/gm, '') : ''}
+                                                        {post.excerpt}
                                                     </p>
                                                 </div>
                                             </div>
@@ -527,7 +566,7 @@ const UserProfile = () => {
                                             )}
                                             <h3 className="text-base font-bold text-slate-800 group-hover:text-green-600 mb-1.5 transition-colors pr-16">/{repost.title}</h3>
                                             <p className="text-slate-400 text-xs line-clamp-2 leading-relaxed pr-8">
-                                                {repost.content ? repost.content.replace(/<[^>]*>?/gm, '') : ''}
+                                                {repost.excerpt}
                                             </p>
                                         </div>
                                     </Link>
@@ -582,7 +621,7 @@ const UserProfile = () => {
                                                             {post.title}
                                                         </h3>
                                                         <p className="text-slate-400 text-xs line-clamp-2 leading-relaxed pr-8">
-                                                            {post.content ? post.content.replace(/<[^>]*>?/gm, '') : ''}
+                                                            {post.excerpt}
                                                         </p>
                                                     </div>
                                                 </div>
@@ -643,14 +682,14 @@ const UserProfile = () => {
 
                                                 <div className="flex items-center gap-2 flex-shrink-0 w-full sm:w-auto">
                                                     <button
-                                                        onClick={() => handleRestore(item.id)}
-                                                        className="flex-1 sm:flex-initial flex items-center justify-center gap-1.5 px-4 py-2 bg-emerald-500 text-white font-bold text-[10px] rounded-lg shadow-sm hover:bg-emerald-600 transition-all active:scale-95 uppercase tracking-wider"
+                                                        onClick={() => handleRestore(item.id, item.item_type)}
+                                                        className="flex-1 sm:flex-initial flex items-center justify-center gap-1.5 px-4 py-2 bg-emerald-500 text-white font-bold text-[10px] rounded-lg shadow-sm hover:bg-emerald-600 transition-all active:scale-95 uppercase tracking-wider border-0 cursor-pointer"
                                                     >
                                                         <RotateCcw size={12} strokeWidth={2} /> Khôi phục
                                                     </button>
                                                     <button
-                                                        onClick={() => handlePermanentDelete(item.id)}
-                                                        className="flex-1 sm:flex-initial flex items-center justify-center gap-1.5 px-4 py-2 bg-red-500 text-white font-bold text-[10px] rounded-lg shadow-sm hover:bg-red-600 transition-all active:scale-95 uppercase tracking-wider"
+                                                        onClick={() => handlePermanentDelete(item.id, item.item_type)}
+                                                        className="flex-1 sm:flex-initial flex items-center justify-center gap-1.5 px-4 py-2 bg-red-500 text-white font-bold text-[10px] rounded-lg shadow-sm hover:bg-red-600 transition-all active:scale-95 uppercase tracking-wider border-0 cursor-pointer"
                                                     >
                                                         <Trash2 size={12} strokeWidth={2} /> Xóa vĩnh viễn
                                                     </button>

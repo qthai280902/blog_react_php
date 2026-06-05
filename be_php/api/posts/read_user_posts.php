@@ -36,6 +36,7 @@ try {
                 p.id, 
                 p.title, 
                 p.content, 
+                p.excerpt,
                 p.created_at, 
                 p.is_hidden, 
                 p.cover_image,
@@ -49,11 +50,22 @@ try {
     $stmt->execute([$user_id]);
     $posts = $stmt->fetchAll(PDO::FETCH_ASSOC);
 
-    // Decode content
+    // Decode and build excerpt fallbacks
     foreach ($posts as &$p) {
-        if (isset($p['content'])) {
-            $p['content'] = html_entity_decode($p['content']);
+        $excerpt = isset($p['excerpt']) ? trim($p['excerpt']) : '';
+        if ($excerpt === '') {
+            $plain = strip_tags(html_entity_decode($p['content']));
+            $plain = preg_replace('/\s+/', ' ', $plain);
+            if (mb_strlen($plain, 'UTF-8') > 150) {
+                $excerpt = mb_substr($plain, 0, 150, 'UTF-8') . '...';
+            } else {
+                $excerpt = $plain;
+            }
+        } else {
+            $excerpt = html_entity_decode($excerpt);
         }
+        $p['excerpt'] = $excerpt;
+        unset($p['content']); // Clean full content
     }
 
     http_response_code(200);

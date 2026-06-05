@@ -54,7 +54,7 @@ $total_pages = max(1, ceil($total_posts / $limit));
 
 // --- BƯỚC 2: LẤY DỮ LIỆU ---
 $query = "SELECT 
-            p.id, p.title, p.content, p.created_at, p.cover_image, 
+            p.id, p.title, p.content, p.excerpt, p.created_at, p.cover_image, 
             u.id as author_id, u.username as author_name,
             GROUP_CONCAT(DISTINCT tg.name) as tags,
             AVG(r.stars) as avg_rating,
@@ -98,7 +98,23 @@ $posts = [];
 while ($row = $stmt->fetch(PDO::FETCH_ASSOC)) {
     $row['tags']       = $row['tags'] ? explode(',', $row['tags']) : [];
     $row['avg_rating'] = $row['avg_rating'] ? round((float)$row['avg_rating'], 1) : 0;
-    $row['content']    = html_entity_decode($row['content']);
+    
+    // Process excerpt with fallback
+    $excerpt = isset($row['excerpt']) ? trim($row['excerpt']) : '';
+    if ($excerpt === '') {
+        $plain = strip_tags(html_entity_decode($row['content']));
+        $plain = preg_replace('/\s+/', ' ', $plain); // collapse whitespaces
+        if (mb_strlen($plain, 'UTF-8') > 150) {
+            $excerpt = mb_substr($plain, 0, 150, 'UTF-8') . '...';
+        } else {
+            $excerpt = $plain;
+        }
+    } else {
+        $excerpt = html_entity_decode($excerpt);
+    }
+    $row['excerpt']    = $excerpt;
+    unset($row['content']); // DO NOT return heavy full content on feed
+    
     $row['hot_score']  = (int)$row['total_likes'] + (int)$row['total_comments'];
     $row['author_uid'] = encodeId($row['author_id']);
     $row['liked']      = isset($row['liked']) ? (bool)$row['liked'] : false;

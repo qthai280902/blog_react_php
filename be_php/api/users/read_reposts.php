@@ -45,6 +45,7 @@ $query = "SELECT
             p.id, 
             p.title, 
             p.content, 
+            p.excerpt,
             p.created_at, 
             u.username as author_name,
             u.id as author_id
@@ -64,6 +65,23 @@ try {
     $stmt = $db->prepare($query);
     $stmt->execute([$profile_id]);
     $reposts = $stmt->fetchAll(PDO::FETCH_ASSOC);
+
+    foreach ($reposts as &$r) {
+        $excerpt = isset($r['excerpt']) ? trim($r['excerpt']) : '';
+        if ($excerpt === '') {
+            $plain = strip_tags(html_entity_decode($r['content']));
+            $plain = preg_replace('/\s+/', ' ', $plain);
+            if (mb_strlen($plain, 'UTF-8') > 150) {
+                $excerpt = mb_substr($plain, 0, 150, 'UTF-8') . '...';
+            } else {
+                $excerpt = $plain;
+            }
+        } else {
+            $excerpt = html_entity_decode($excerpt);
+        }
+        $r['excerpt'] = $excerpt;
+        unset($r['content']); // Clean full content
+    }
 
     http_response_code(200);
     echo json_encode(["status" => "success", "data" => $reposts]);

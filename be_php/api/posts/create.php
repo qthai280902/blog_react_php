@@ -63,6 +63,8 @@ if (empty($title) || empty($content)) {
 
 // Chống XSS cho tiêu đề, nhưng giữ nguyên HTML cho Content (vì dùng Rich Text)
 $title   = htmlspecialchars($title, ENT_QUOTES, 'UTF-8');
+$excerpt = isset($_POST['excerpt']) ? trim($_POST['excerpt']) : '';
+$excerpt = htmlspecialchars($excerpt, ENT_QUOTES, 'UTF-8');
 // [RICH TEXT SYNC]: Không dùng htmlspecialchars ở đây vì Frontend đã dùng DOMPurify
 $content = $content; 
 
@@ -152,8 +154,8 @@ try {
     }
 
     // ── 4c. INSERT BÀI VIẾT ──
-    $stmt = $db->prepare("INSERT INTO posts (user_id, title, content, cover_image) VALUES (?, ?, ?, ?)");
-    $stmt->execute([$user['id'], $title, $content, $cover_filename]);
+    $stmt = $db->prepare("INSERT INTO posts (user_id, title, content, excerpt, cover_image) VALUES (?, ?, ?, ?, ?)");
+    $stmt->execute([$user['id'], $title, $content, $excerpt, $cover_filename]);
     $post_id = (int)$db->lastInsertId();
 
     // ── 4d. INSERT ẢNH PHỤ VÀO post_images ──

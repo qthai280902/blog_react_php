@@ -237,7 +237,7 @@ const PostList = () => {
                                             </h2>
                                         </Link>
                                         <p className="text-xs text-slate-500 line-clamp-3 leading-relaxed mt-2">
-                                            {heroPost.content ? heroPost.content.replace(/<[^>]*>?/gm, '') : ''}
+                                            {heroPost.excerpt}
                                         </p>
                                     </div>
 
@@ -281,7 +281,7 @@ const PostList = () => {
                                                 </h3>
                                             </Link>
                                             <p className="text-[11px] text-slate-400 line-clamp-2 leading-relaxed mt-1.5">
-                                                {post.content ? post.content.replace(/<[^>]*>?/gm, '') : ''}
+                                                {post.excerpt}
                                             </p>
                                         </div>
                                         <div className="flex items-center justify-between pt-3 border-t border-slate-50 mt-3 text-[10px]">
@@ -347,7 +347,7 @@ const PostList = () => {
 
                                             {/* Excerpt */}
                                             <p className="text-xs text-slate-500 line-clamp-2 leading-relaxed mt-1 hidden sm:block">
-                                                {post.content ? post.content.replace(/<[^>]*>?/gm, '') : ''}
+                                                {post.excerpt}
                                             </p>
                                         </div>
 

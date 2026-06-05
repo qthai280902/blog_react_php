@@ -48,6 +48,7 @@ $query = "SELECT
             p.id, 
             p.title, 
             p.content, 
+            p.excerpt,
             p.created_at, 
             p.cover_image, 
             u.username as author_name,
@@ -72,7 +73,20 @@ try {
     // Xử lý dữ liệu trước khi trả về
     foreach ($posts as &$p) {
         $p['tags'] = $p['tags'] ? explode(',', $p['tags']) : [];
-        $p['content'] = html_entity_decode($p['content']);
+        $excerpt = isset($p['excerpt']) ? trim($p['excerpt']) : '';
+        if ($excerpt === '') {
+            $plain = strip_tags(html_entity_decode($p['content']));
+            $plain = preg_replace('/\s+/', ' ', $plain);
+            if (mb_strlen($plain, 'UTF-8') > 150) {
+                $excerpt = mb_substr($plain, 0, 150, 'UTF-8') . '...';
+            } else {
+                $excerpt = $plain;
+            }
+        } else {
+            $excerpt = html_entity_decode($excerpt);
+        }
+        $p['excerpt'] = $excerpt;
+        unset($p['content']); // Clean full content
         $p['total_likes'] = (int)$p['total_likes'];
         $p['total_comments'] = (int)$p['total_comments'];
         $p['author_uid'] = encodeId($p['author_id']);

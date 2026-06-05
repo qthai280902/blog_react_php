@@ -15,6 +15,7 @@ const CreatePost = () => {
     const [tags, setTags] = useState('');
     const [coverImage, setCoverImage] = useState(null);
     const [coverPreview, setCoverPreview] = useState('');
+    const [excerpt, setExcerpt] = useState('');
     const [loading, setLoading] = useState(false);
     const [activeTab, setActiveTab] = useState('edit');
     
@@ -80,6 +81,7 @@ const CreatePost = () => {
         const formData = new FormData();
         formData.append('title', title);
         formData.append('content', content);
+        formData.append('excerpt', excerpt);
         formData.append('tags', tags);
         if (coverImage) {
             formData.append('cover_image', coverImage);
@@ -117,10 +119,10 @@ const CreatePost = () => {
                     <button
                         type="button"
                         onClick={() => setActiveTab('edit')}
-                        className={`flex items-center gap-2 px-5 py-2 rounded-xl text-xs font-black uppercase tracking-wider transition-all cursor-pointer ${
+                        className={`flex items-center gap-2 px-5 py-2 rounded-xl text-xs font-black uppercase tracking-wider transition-all cursor-pointer border-0 ${
                             activeTab === 'edit'
                                 ? 'bg-white text-blue-600 shadow-md'
-                                : 'text-slate-500 hover:text-slate-800'
+                                : 'text-slate-500 hover:text-slate-800 bg-transparent'
                         }`}
                     >
                         <Edit3 size={14} /> Soạn thảo
@@ -128,10 +130,10 @@ const CreatePost = () => {
                     <button
                         type="button"
                         onClick={() => setActiveTab('preview')}
-                        className={`flex items-center gap-2 px-5 py-2 rounded-xl text-xs font-black uppercase tracking-wider transition-all cursor-pointer ${
+                        className={`flex items-center gap-2 px-5 py-2 rounded-xl text-xs font-black uppercase tracking-wider transition-all cursor-pointer border-0 ${
                             activeTab === 'preview'
                                 ? 'bg-white text-blue-600 shadow-md'
-                                : 'text-slate-500 hover:text-slate-800'
+                                : 'text-slate-500 hover:text-slate-800 bg-transparent'
                         }`}
                     >
                         <Eye size={14} /> Xem trước
@@ -206,6 +208,18 @@ const CreatePost = () => {
                             />
                         </div>
 
+                        {/* Excerpt Input */}
+                        <div className="space-y-2">
+                            <label className="text-[10px] font-black uppercase tracking-widest text-slate-400 ml-1">Mô tả ngắn</label>
+                            <textarea
+                                value={excerpt}
+                                onChange={(e) => setExcerpt(e.target.value)}
+                                placeholder="Tóm tắt ngắn gọn nội dung bài viết để hiển thị ngoài trang chủ..."
+                                className="w-full bg-slate-50 border border-slate-100 focus:border-blue-500/20 focus:bg-white rounded-xl px-5 py-3.5 text-sm font-bold outline-none focus:ring-4 focus:ring-blue-500/10 transition-all placeholder:text-slate-300 text-slate-700 shadow-inner resize-none"
+                                rows={2}
+                            />
+                        </div>
+
                         {/* Tags */}
                         <div className="space-y-3">
                             <label className="text-[10px] font-black uppercase tracking-widest text-slate-400 ml-1">Thẻ / Từ khóa (cách nhau bằng dấu phẩy)</label>
@@ -267,7 +281,7 @@ const CreatePost = () => {
                             {/* Preview Meta Info */}
                             <div className="flex items-center space-x-6 text-slate-400 mb-8 border-b border-slate-100 pb-6">
                                 <div className="flex items-center gap-2">
-                                    <div className="w-10 h-10 rounded-2xl bg-slate-900 flex items-center justify-center font-black text-white uppercase overflow-hidden shadow-md">
+                                    <div className="w-10 h-10 rounded-2xl bg-gradient-to-tr from-slate-700 to-slate-800 flex items-center justify-center font-black text-white uppercase overflow-hidden shadow-md shadow-inner">
                                         {currentUser?.avatar_image ? (
                                             <img 
                                                 src={`http://localhost:8000/uploads/${currentUser.avatar_image}`} 

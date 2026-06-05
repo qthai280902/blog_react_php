@@ -1,7 +1,6 @@
 <?php
-
-include_once '../../config/database.php';
-include_once '../auth/token_helper.php';
+include_once __DIR__ . '/../../config/database.php';
+include_once __DIR__ . '/../auth/token_helper.php';
 
 // ── JWT AUTH ──
 $user = get_auth_user();
@@ -11,19 +10,34 @@ if (!$user) {
     exit();
 }
 
+include_once __DIR__ . '/../../config/id_helper.php';
+
 $database = new Database();
 $db = $database->getConnection();
-$data = json_decode(file_get_contents("php://input"));
+$input = json_decode(file_get_contents("php://input"), true) ?? [];
+$post_id_raw = $input['post_id'] ?? $_POST['post_id'] ?? null;
 
-if (empty($data->post_id)) {
+if (empty($post_id_raw)) {
     http_response_code(400);
     echo json_encode(["message" => "Thiếu post_id."]);
     exit();
 }
 
+// Decode post_id
+$post_id = decodeId($post_id_raw);
+if (!$post_id && is_numeric($post_id_raw)) {
+    $post_id = (int)$post_id_raw;
+}
+
+if (!$post_id) {
+    http_response_code(400);
+    echo json_encode(["message" => "post_id không hợp lệ."]);
+    exit();
+}
+
 // ── IDOR CHECK ──
 $stmt = $db->prepare("SELECT user_id FROM posts WHERE id = ? AND deleted_at IS NULL");
-$stmt->execute([$data->post_id]);
+$stmt->execute([$post_id]);
 $post = $stmt->fetch(PDO::FETCH_ASSOC);
 
 if (!$post) {
@@ -41,7 +55,7 @@ if ($user['id'] != $post['user_id'] && !$is_admin) {
 
 // ── SOFT DELETE: set deleted_at = NOW() ──
 $upd = $db->prepare("UPDATE posts SET deleted_at = NOW() WHERE id = ?");
-$upd->execute([$data->post_id]);
+$upd->execute([$post_id]);
 
 http_response_code(200);
 echo json_encode([

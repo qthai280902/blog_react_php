@@ -21,8 +21,36 @@ if (empty($data->post_id)) {
     exit();
 }
 
+// Helper function to create or update repost notification
+function triggerRepostNotification($db, $actor_id, $post_id, $origin_user_id) {
+    if ((int)$origin_user_id === (int)$actor_id) {
+        return; // Don't notify self
+    }
+    try {
+        // Check if notification already exists to avoid duplicate spam
+        $check_notif = $db->prepare("SELECT id FROM notifications WHERE user_id = ? AND actor_id = ? AND post_id = ? AND type = 'repost'");
+        $check_notif->execute([$origin_user_id, $actor_id, $post_id]);
+        $existing = $check_notif->fetch(PDO::FETCH_ASSOC);
+        
+        if ($existing) {
+            $upd_notif = $db->prepare("UPDATE notifications SET is_read = 0, created_at = NOW(), read_at = NULL WHERE id = ?");
+            $upd_notif->execute([$existing['id']]);
+        } else {
+            $ins_notif = $db->prepare("INSERT INTO notifications (user_id, actor_id, post_id, type, message) VALUES (?, ?, ?, 'repost', ?)");
+            $ins_notif->execute([
+                $origin_user_id,
+                $actor_id,
+                $post_id,
+                "đã đăng lại bài viết của bạn"
+            ]);
+        }
+    } catch (Exception $e) {
+        // Fail silently
+    }
+}
+
 // 1. Kiểm tra xem đã repost chưa (Toggle)
-$check_query = "SELECT id, deleted_at FROM reposts WHERE user_id = ? AND post_id = ?";
+$check_query = "SELECT id, deleted_at, origin_user_id FROM reposts WHERE user_id = ? AND post_id = ?";
 $stmt_check = $db->prepare($check_query);
 $stmt_check->execute([$user['id'], $data->post_id]);
 $repost = $stmt_check->fetch(PDO::FETCH_ASSOC);
@@ -41,6 +69,8 @@ if ($repost) {
         $upd_query = "UPDATE reposts SET deleted_at = NULL, is_hidden = 0 WHERE id = ?";
         $stmt_upd = $db->prepare($upd_query);
         $stmt_upd->execute([$repost['id']]);
+        
+        triggerRepostNotification($db, $user['id'], $data->post_id, $repost['origin_user_id']);
         
         http_response_code(200);
         echo json_encode(array("status" => "reposted", "message" => "Đã Repost bài viết về trang cá nhân!"));
@@ -62,6 +92,8 @@ if ($repost) {
     $ins_query = "INSERT INTO reposts (user_id, post_id, origin_user_id) VALUES (?, ?, ?)";
     $stmt_ins = $db->prepare($ins_query);
     if ($stmt_ins->execute([$user['id'], $data->post_id, $origin['user_id']])) {
+        triggerRepostNotification($db, $user['id'], $data->post_id, $origin['user_id']);
+        
         http_response_code(201);
         echo json_encode(array("status" => "reposted", "message" => "Đã Repost bài viết về trang cá nhân!"));
     } else {

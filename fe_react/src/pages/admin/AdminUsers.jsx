@@ -7,7 +7,7 @@ import {
 
 /* ─────────────────────────────────────────────
    Sub-components
-───────────────────────────────────────────── */
+   ───────────────────────────────────────────── */
 const StatCard = ({ label, value, color }) => (
     <div className="bg-slate-900/60 border border-slate-800 rounded-2xl p-4 space-y-1 text-center">
         <p className="text-[10px] font-black text-slate-500 uppercase tracking-widest">{label}</p>
@@ -36,10 +36,18 @@ const ActivityRow = ({ main, sub, right }) => (
 
 /* ─────────────────────────────────────────────
    Main Component
-───────────────────────────────────────────── */
+   ───────────────────────────────────────────── */
 const AdminUsers = () => {
     const [users, setUsers] = useState([]);
     const [loading, setLoading] = useState(true);
+
+    // Pagination & Search State
+    const [page, setPage] = useState(1);
+    const [totalPages, setTotalPages] = useState(1);
+    const [totalUsers, setTotalUsers] = useState(0);
+    const [search, setSearch] = useState('');
+    const [searchQuery, setSearchQuery] = useState('');
+    const limit = 15;
 
     // Drawer state
     const [drawerOpen, setDrawerOpen]       = useState(false);
@@ -50,14 +58,25 @@ const AdminUsers = () => {
 
     const token = localStorage.getItem('token');
 
-    /* ── Fetch user list ── */
+    /* ── Fetch user list with pagination and search ── */
     useEffect(() => {
         const fetchUsers = async () => {
+            setLoading(true);
             try {
-                const data = await axiosClient.get('/api/users/list.php', {
-                    headers: { Authorization: 'Bearer ' + token }
-                });
-                setUsers(Array.isArray(data) ? data : []);
+                const res = await axiosClient.get(
+                    `/api/users/list.php?page=${page}&limit=${limit}&search=${encodeURIComponent(searchQuery)}`,
+                    { headers: { Authorization: 'Bearer ' + token } }
+                );
+                if (res && res.status === 'success') {
+                    setUsers(Array.isArray(res.users) ? res.users : []);
+                    setTotalPages(res.total_pages || 1);
+                    setTotalUsers(res.total_users || 0);
+                } else {
+                    // Fallback
+                    setUsers(Array.isArray(res) ? res : []);
+                    setTotalPages(1);
+                    setTotalUsers(Array.isArray(res) ? res.length : 0);
+                }
             } catch (err) {
                 console.error('Fetch users error:', err);
                 setUsers([]);
@@ -66,7 +85,7 @@ const AdminUsers = () => {
             }
         };
         fetchUsers();
-    }, []);
+    }, [page, searchQuery]);
 
     /* ── Open drawer & fetch user details ── */
     const openDrawer = async (user) => {
@@ -103,12 +122,6 @@ const AdminUsers = () => {
         { id: 'ratings',  label: 'Ratings',  icon: Star },
     ];
 
-    if (loading) return (
-        <div className="text-cyan-500 font-mono animate-pulse uppercase tracking-widest text-sm pt-10">
-            Syncing User Directory...
-        </div>
-    );
-
     return (
         <div className="space-y-8 animate-in fade-in duration-500">
 
@@ -116,8 +129,50 @@ const AdminUsers = () => {
             <div>
                 <h1 className="text-3xl font-black text-white uppercase tracking-tight">Quản lý người dùng</h1>
                 <p className="text-cyan-500/50 font-mono text-[10px] uppercase tracking-widest mt-1">
-                    Tổng số: <span className="text-cyan-400 font-black">{users.length}</span>
+                    Tổng số: <span className="text-cyan-400 font-black">{totalUsers}</span>
                 </p>
+            </div>
+
+            {/* ── SEARCH BAR ── */}
+            <div className="bg-slate-900/60 border border-cyan-500/10 rounded-2xl p-6 flex flex-col md:flex-row gap-4 items-center justify-between backdrop-blur-sm">
+                <div className="w-full md:max-w-md relative flex items-center">
+                    <input 
+                        type="text" 
+                        value={search} 
+                        onChange={e => setSearch(e.target.value)}
+                        onKeyDown={e => {
+                            if (e.key === 'Enter') {
+                                setPage(1);
+                                setSearchQuery(search);
+                            }
+                        }}
+                        placeholder="Tìm theo username hoặc display name..."
+                        className="w-full bg-slate-950 border border-slate-800 focus:border-cyan-500/60 rounded-xl pl-4 pr-10 py-2.5 text-xs text-slate-300 placeholder-slate-600 outline-none transition-colors"
+                    />
+                    {search && (
+                        <button 
+                            onClick={() => {
+                                setSearch('');
+                                setPage(1);
+                                setSearchQuery('');
+                            }}
+                            className="absolute right-3 text-slate-500 hover:text-slate-300 border-0 bg-transparent cursor-pointer"
+                        >
+                            <X size={16} />
+                        </button>
+                    )}
+                </div>
+                <div className="flex gap-2 w-full md:w-auto">
+                    <button 
+                        onClick={() => {
+                            setPage(1);
+                            setSearchQuery(search);
+                        }}
+                        className="flex-1 md:flex-none inline-flex items-center justify-center gap-1.5 px-5 py-2.5 text-[11px] font-black uppercase tracking-widest text-cyan-400 bg-cyan-500/5 border border-cyan-500/20 hover:bg-cyan-500/10 hover:border-cyan-400 rounded-xl transition-all active:scale-95 cursor-pointer"
+                    >
+                        Tìm kiếm
+                    </button>
+                </div>
             </div>
 
             {/* ── USER TABLE ── */}
@@ -133,7 +188,13 @@ const AdminUsers = () => {
                         </tr>
                     </thead>
                     <tbody className="divide-y divide-cyan-500/5 text-sm">
-                        {users.length === 0 ? (
+                        {loading ? (
+                            <tr>
+                                <td colSpan="5" className="p-16 text-center text-cyan-500 font-mono text-xs uppercase tracking-widest animate-pulse">
+                                    Syncing User Directory...
+                                </td>
+                            </tr>
+                        ) : users.length === 0 ? (
                             <tr>
                                 <td colSpan="5" className="p-16 text-center text-slate-600 font-mono text-xs uppercase italic tracking-widest">
                                     No users found.
@@ -159,7 +220,7 @@ const AdminUsers = () => {
                                     <td className="p-5 text-center">
                                         <button
                                             onClick={() => openDrawer(user)}
-                                            className="inline-flex items-center gap-1.5 px-4 py-2 text-cyan-400 bg-cyan-500/5 border border-cyan-500/20 hover:bg-cyan-500/10 hover:border-cyan-400 rounded-xl transition-all active:scale-90 text-[11px] font-black uppercase tracking-widest"
+                                            className="inline-flex items-center gap-1.5 px-4 py-2 text-cyan-400 bg-cyan-500/5 border border-cyan-500/20 hover:bg-cyan-500/10 hover:border-cyan-400 rounded-xl transition-all active:scale-90 text-[11px] font-black uppercase tracking-widest cursor-pointer"
                                         >
                                             <Eye size={14} strokeWidth={1.5} /> Inspect
                                         </button>
@@ -170,6 +231,29 @@ const AdminUsers = () => {
                     </tbody>
                 </table>
             </div>
+
+            {/* ── PAGINATION CONTROLS ── */}
+            {totalPages > 1 && (
+                <div className="flex items-center justify-between px-4 py-3 bg-slate-950/40 border border-cyan-500/10 rounded-2xl">
+                    <button
+                        disabled={page === 1}
+                        onClick={() => setPage(prev => Math.max(1, prev - 1))}
+                        className="px-4 py-2 text-xs font-black uppercase tracking-widest text-cyan-400 bg-cyan-500/5 border border-cyan-500/10 hover:bg-cyan-500/10 rounded-xl transition-all disabled:opacity-30 disabled:pointer-events-none cursor-pointer border-0"
+                    >
+                        Trang trước
+                    </button>
+                    <span className="text-xs text-slate-400 font-mono">
+                        Trang <span className="text-cyan-400 font-black">{page}</span> / {totalPages}
+                    </span>
+                    <button
+                        disabled={page === totalPages}
+                        onClick={() => setPage(prev => Math.min(totalPages, prev + 1))}
+                        className="px-4 py-2 text-xs font-black uppercase tracking-widest text-cyan-400 bg-cyan-500/5 border border-cyan-500/10 hover:bg-cyan-500/10 rounded-xl transition-all disabled:opacity-30 disabled:pointer-events-none cursor-pointer border-0"
+                    >
+                        Trang sau
+                    </button>
+                </div>
+            )}
 
             {/* ══════════════════════════════════════
                 HÀNH ĐỘNG — DRAWER
@@ -205,7 +289,7 @@ const AdminUsers = () => {
                                 </div>
                                 <button
                                     onClick={closeDrawer}
-                                    className="text-slate-500 hover:text-white p-2 rounded-xl hover:bg-slate-800 transition-all active:scale-90"
+                                    className="text-slate-500 hover:text-white p-2 rounded-xl hover:bg-slate-800 transition-all active:scale-90 border-0 bg-transparent cursor-pointer"
                                 >
                                     <X size={20} strokeWidth={1.5} />
                                 </button>
@@ -274,10 +358,10 @@ const AdminUsers = () => {
                                                 <button
                                                     key={id}
                                                     onClick={() => setActiveTab(id)}
-                                                    className={`flex-1 flex items-center justify-center gap-1.5 py-2 rounded-lg text-[10px] font-black uppercase tracking-wider transition-all ${
+                                                    className={`flex-1 flex items-center justify-center gap-1.5 py-2 rounded-lg text-[10px] font-black uppercase tracking-wider transition-all border-0 cursor-pointer ${
                                                         activeTab === id
                                                             ? 'bg-cyan-500 text-slate-950 shadow-lg shadow-cyan-500/20'
-                                                            : 'text-slate-500 hover:text-slate-300'
+                                                            : 'text-slate-500 hover:text-slate-300 bg-transparent'
                                                     }`}
                                                 >
                                                     <Icon size={11} strokeWidth={2} /> {label}
@@ -349,7 +433,7 @@ const AdminUsers = () => {
                         <div className="flex-shrink-0 px-8 py-5 border-t border-cyan-500/10 bg-slate-900/20">
                             <button
                                 onClick={closeDrawer}
-                                className="w-full bg-slate-800 hover:bg-slate-700 text-slate-300 font-black py-3.5 rounded-2xl transition-all uppercase tracking-widest text-xs active:scale-95"
+                                className="w-full bg-slate-800 hover:bg-slate-700 text-slate-300 font-black py-3.5 rounded-2xl transition-all uppercase tracking-widest text-xs active:scale-95 border-0 cursor-pointer"
                             >
                                 ĐÓNG
                             </button>

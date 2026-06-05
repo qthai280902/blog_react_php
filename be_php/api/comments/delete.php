@@ -1,28 +1,29 @@
 <?php
-
-if ($_SERVER['REQUEST_METHOD'] === 'OPTIONS') {
-    http_response_code(200);
-    exit();
-}
-
-include_once '../../config/database.php';
-include_once '../auth/token_helper.php';
+include_once __DIR__ . '/../../config/database.php';
+include_once __DIR__ . '/../auth/token_helper.php';
 
 $user = get_auth_user();
 if (!$user) {
     http_response_code(401);
-    echo json_encode(["message" => "Unauthorized"]);
+    echo json_encode([
+        "status" => "error",
+        "message" => "Unauthorized"
+    ]);
     exit();
 }
 
 $database = new Database();
 $db = $database->getConnection();
 
-$data = json_decode(file_get_contents("php://input"));
+$input = json_decode(file_get_contents('php://input'), true) ?? [];
+$commentId = $input['comment_id'] ?? $_POST['comment_id'] ?? $input['id'] ?? $_POST['id'] ?? null;
 
-if (empty($data->id)) {
+if (empty($commentId)) {
     http_response_code(400);
-    echo json_encode(["message" => "Thiếu ID bình luận."]);
+    echo json_encode([
+        "status" => "error",
+        "message" => "Thiếu ID bình luận."
+    ]);
     exit();
 }
 
@@ -35,12 +36,15 @@ $stmt = $db->prepare("
     INNER JOIN posts p ON c.post_id = p.id
     WHERE c.id = ?
 ");
-$stmt->execute([$data->id]);
+$stmt->execute([$commentId]);
 $comment = $stmt->fetch(PDO::FETCH_ASSOC);
 
 if (!$comment) {
     http_response_code(404);
-    echo json_encode(["message" => "Bình luận không tồn tại."]);
+    echo json_encode([
+        "status" => "error",
+        "message" => "Bình luận không tồn tại."
+    ]);
     exit();
 }
 
@@ -60,42 +64,57 @@ if (!$can_delete && $user['id'] == $comment['comment_author_id']) {
     $reason = 'comment_owner';
 }
 
-// Cấp 3: Chủ bài viết — chỉ khi có >= 10000 followers
+// Cấp 3: Chủ bài viết — được phép xóa mọi bình luận trong bài của mình
 if (!$can_delete && $user['id'] == $comment['post_author_id']) {
-    $f_stmt = $db->prepare("SELECT COUNT(*) as total FROM follows WHERE following_id = ?");
-    $f_stmt->execute([$user['id']]);
-    $follower_count = (int)$f_stmt->fetch(PDO::FETCH_ASSOC)['total'];
-
-    if ($follower_count >= 10000) {
-        $can_delete = true;
-        $reason = 'post_owner_legendary';
-    } else {
-        // Chủ bài viết nhưng chưa đủ followers
-        http_response_code(403);
-        echo json_encode([
-            "message" => "Bạn cần đạt 10,000 followers để có quyền xóa bình luận trên bài của mình. Hiện tại: {$follower_count}.",
-            "followers" => $follower_count,
-            "required" => 10000,
-        ]);
-        exit();
-    }
+    $can_delete = true;
+    $reason = 'post_owner';
 }
 
 // ── THỰC THI XÓA ──
 if ($can_delete) {
-    $del_stmt = $db->prepare("DELETE FROM comments WHERE id = ?");
-    if ($del_stmt->execute([$data->id])) {
+    try {
+        $db->beginTransaction();
+        
+        // 1. Xóa thông báo liên quan đến các phản hồi con trước
+        $stmt_child_notif = $db->prepare("
+            DELETE FROM notifications 
+            WHERE comment_id IN (SELECT id FROM comments WHERE parent_id = ?)
+        ");
+        $stmt_child_notif->execute([$commentId]);
+        
+        // 2. Xóa thông báo liên quan đến chính bình luận này
+        $stmt_notif = $db->prepare("DELETE FROM notifications WHERE comment_id = ?");
+        $stmt_notif->execute([$commentId]);
+        
+        // 3. Xóa các phản hồi con
+        $stmt_child_comments = $db->prepare("DELETE FROM comments WHERE parent_id = ?");
+        $stmt_child_comments->execute([$commentId]);
+        
+        // 4. Xóa chính bình luận này
+        $del_stmt = $db->prepare("DELETE FROM comments WHERE id = ?");
+        $del_stmt->execute([$commentId]);
+        
+        $db->commit();
+        
         http_response_code(200);
         echo json_encode([
-            "message" => "Bình luận đã được xóa.",
+            "status" => "success",
+            "message" => "Đã xóa bình luận",
             "deleted_by" => $reason,
         ]);
-    } else {
+    } catch (Throwable $e) {
+        $db->rollBack();
         http_response_code(500);
-        echo json_encode(["message" => "Lỗi server khi xóa bình luận."]);
+        echo json_encode([
+            "status" => "error",
+            "message" => "Lỗi hệ thống: " . $e->getMessage()
+        ]);
     }
 } else {
     http_response_code(403);
-    echo json_encode(["message" => "Bạn không có quyền xóa bình luận này."]);
+    echo json_encode([
+        "status" => "error",
+        "message" => "Bạn không có quyền xóa bình luận này."
+    ]);
 }
 ?>

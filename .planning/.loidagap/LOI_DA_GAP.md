@@ -261,6 +261,218 @@
 **Kết quả sau khi fix:**
 - Script reset dữ liệu hoạt động mượt mà, hoàn thành chèn 10,001 người dùng bot và hơn 11,000 quan hệ follows chỉ trong chưa đầy **2 giây** mà không tốn tài nguyên CPU.
 
+---
+
+### Lỗi 10: Nút/tab màu đen thô thiển khi không hoạt động hoặc trong các modal xác nhận
+
+**Ngày gặp:** 05/06/2026
+
+**Phase:** Phase 7B Hotfix
+
+**Mô tả lỗi:**
+- Khi người dùng ở chế độ prefers-color-scheme dark hoặc trên một số giao diện nhất định, các tab không hoạt động (inactive) trong dropdown thông báo, tab trong profile, và nút hủy trong các modal xác nhận bị hiển thị màu đen xám rất xấu.
+
+**File liên quan:**
+- `fe_react/src/index.css`
+- `fe_react/src/components/ConfirmModal.jsx`
+- `fe_react/src/components/EditProfileModal.jsx`
+- `fe_react/src/pages/UserProfile.jsx`
+- `fe_react/src/components/Navbar.jsx`
+
+**Nguyên nhân gốc:**
+- Do template mặc định của Vite đặt rule CSS reset `button { background-color: #1a1a1a; }`. Khi các nút bấm hoặc tab ở trạng thái inactive không khai báo background tường minh (hoặc dùng Tailwind lớp ngoài không đè được), trình duyệt sẽ fallback về nền đen thô `#1a1a1a`.
+
+**Cách fix:**
+- Cập nhật rule `button` trong `index.css` đổi `background-color` mặc định thành `transparent`.
+- Thiết kế lại các tab trong `UserProfile.jsx` và `Navbar.jsx` bằng pill layout và khai báo màu nền `bg-slate-50` / `bg-transparent` cụ thể.
+- Gia cố nút hủy trong `ConfirmModal.jsx` và `EditProfileModal.jsx` bằng class `bg-slate-100 text-slate-600 hover:bg-slate-200` rõ ràng.
+- Đổi nút submit thông tin và nút chỉnh sửa profile thành màu xanh dương MyBlog (`bg-blue-600 hover:bg-blue-700 text-white`).
+- Thay các fallback avatar `bg-slate-900` bằng gradient `bg-gradient-to-tr from-slate-700 to-slate-800 shadow-inner`.
+
+---
+
+### Lỗi 11: Thùng rác bài viết và lượt đăng lại (repost) bị đơ counter (0) và không hiện bài viết vừa xóa
+
+**Ngày gặp:** 05/06/2026
+
+**Phase:** Phase 7B Hotfix
+
+**Mô tả lỗi:**
+- Người dùng xóa bài viết/repost thành công, nhận được toast thông báo chuyển vào thùng rác nhưng tab Thùng rác vẫn ghi số lượng (0) và nhấp vào tab thì trống không, bài viết không xuất hiện.
+
+**File liên quan:**
+- `fe_react/src/pages/UserProfile.jsx`
+- `be_php/api/posts/restore.php`
+- `be_php/api/posts/permanent_delete.php`
+
+**Nguyên nhân gốc:**
+1. Hàm `fetchTrash()` chỉ được gọi khi nhấp vào tab thùng rác chứ không được khởi tạo khi mount, dẫn đến số lượng badge ban đầu bị đơ (0).
+2. Khi người dùng thực hiện soft-delete, khôi phục hoặc xóa vĩnh viễn, frontend lọc state mà không kích hoạt gọi lại `fetchTrash()` để đồng bộ lại counter và list rác.
+3. Khi khôi phục hoặc xóa vĩnh viễn một repost rác, frontend không gửi kèm tham số `item_type = 'repost'` làm backend mặc định check bảng `posts` và ném lỗi 404 (Không tồn tại).
+
+**Cách fix:**
+1. Đưa `fetchTrash()` vào chạy song song ở mount `useEffect` nếu là profile chính chủ.
+2. Gọi lại `fetchTrash()` đồng bộ ngay sau các lệnh soft-delete, restore, hoặc permanent delete thành công để cập nhật lại badge số lượng và danh sách.
+3. Truyền kèm `item_type: item.item_type` từ frontend lên API `restore.php` và `permanent_delete.php` để backend phân luồng truy vấn đúng bảng database.
+
+---
+
+### Lỗi 12: Lỗi xóa bình luận báo "Lỗi khi xóa bình luận"
+
+**Ngày gặp:** 05/06/2026
+
+**Phase:** Phase 7B Hotfix
+
+**Mô tả lỗi:**
+- Người dùng bấm nút thùng rác xóa bình luận dưới bài viết hoặc bình luận của chính mình thì toast luôn báo lỗi màu đỏ "Lỗi khi xóa bình luận."
+
+**File liên quan:**
+- `be_php/api/comments/delete.php`
+
+**Nguyên nhân gốc:**
+- Do bảng `notifications` có thiết lập ràng buộc khóa ngoại (foreign key restriction) trỏ vào `comment_id` của bảng `comments`. Khi thực hiện lệnh xóa trực tiếp bình luận trong database, hệ thống ném ra lỗi vi phạm ràng buộc khóa ngoại và transaction bị rollback.
+
+**Cách fix:**
+- Cải tiến quy trình xóa trong `comments/delete.php` chạy transaction theo thứ tự an toàn:
+  1. Xóa thông báo liên quan đến các phản hồi con trước.
+  2. Xóa thông báo liên quan đến chính bình luận này.
+  3. Xóa các phản hồi con.
+  4. Xóa chính bình luận này.
+- Đổi mệnh đề catch từ `Exception` sang `Throwable` để hứng trọn vẹn lỗi runtime PHP 8+.
+
+---
+
+### Lỗi 13: Lỗi crash 500 khi phản hồi bình luận (comment reply) nhiều lần
+
+**Ngày gặp:** 05/06/2026
+
+**Phase:** Phase 7B Hotfix
+
+**Mô tả lỗi:**
+- Người dùng viết bình luận, admin phản hồi lại 1 lần thành công nhưng các lần phản hồi tiếp theo luôn báo lỗi đỏ.
+
+**File liên quan:**
+- `be_php/api/comments/create.php`
+
+**Nguyên nhân gốc:**
+- Do logic gửi thông báo phản hồi (notifications) trong `comments/create.php` thực hiện truy vấn parent comment owner hoặc post owner và cố truy cập dữ liệu kiểu mảng trên giá trị boolean (khi kết quả fetch trả về `false`). Trên PHP 8+, điều này ném ra lỗi `TypeError` khiến luồng PHP bị dừng và trả về HTTP 500 Internal Server Error làm nghẽn hoàn toàn luồng đăng reply tiếp theo.
+
+**Cách fix:**
+- Gia cố logic kiểm tra giá trị dữ liệu trả về trước khi bóc tách thông tin: `if ($parent_comment_info) { ... }`.
+- Bao bọc toàn bộ khối logic thông báo phụ trong khối `try { ... } catch (Throwable $e) { // Fail silently }` để đảm bảo lỗi thông báo (nếu có) tuyệt đối không phá hỏng tiến trình thêm bình luận chính.
+
+---
+
+### Lỗi 14: Chuông thông báo dropdown quá thô và tab đen xấu
+
+**Ngày gặp:** 05/06/2026
+
+**Phase:** Phase 7B Hotfix
+
+**Mô tả lỗi:**
+- Dropdown thông báo hiển thị dầy, thô, các tab lọc Bình luận, Đăng lại, Thích bị dính nền đen, thiếu chỉ số count thông báo chưa đọc, không có scrollbar mịn.
+
+**File liên quan:**
+- `fe_react/src/components/Navbar.jsx`
+
+**Nguyên nhân gốc:**
+- CSS class tab chưa rõ ràng dẫn đến dính default background đen của reset button. Spacing và padding chưa tối ưu hóa cho news/blog portal cao cấp.
+
+**Cách fix:**
+- Nâng rộng dropdown lên `w-96` cân đối hơn trên màn hình máy tính.
+- Đổi màu 3 tab thông báo sang dạng pill xám nhạt (`bg-slate-50`), tab active nền trắng shadow tinh tế.
+- Tự động tính toán số lượng thông báo CHƯA ĐỌC (`!is_read`) theo từng tab và hiển thị badge đỏ nhấp nháy (`animate-pulse`) ngay bên cạnh chữ tab.
+- Thêm CSS ẩn scrollbar thô sơ (`no-scrollbar`) để danh sách thông báo cuộn mượt mà.
+- Thiết kế lại empty state thông báo đẹp mắt.
+- Bổ sung avatar thật của người kích hoạt thông báo bằng cách nâng cấp backend API `read.php` và `create.php` (bình luận) trả về cột `avatar_image`.
+- Cập nhật giao diện replies lồng nhau: thụt lề `ml-12`, có đường kẻ màu xanh bên trái (`border-l-2 border-blue-500/20 pl-4 py-1`) và nhãn "Phản hồi" tinh xảo. Cho phép phản hồi liên tục bằng cách nhấp "Phản hồi" ở reply con để prefill tag `@username` và tự động trỏ lên cha cao nhất.
+
+---
+
+### Lỗi 15: Thùng rác bài viết và lượt đăng lại (repost) bị chập chờn hoặc trống rác khi truy cập trang cá nhân bằng ID thô (/profile/1)
+
+**Ngày gặp:** 05/06/2026
+
+**Phase:** Phase 7C Hotfix
+
+**Mô tả lỗi:**
+- Người dùng xóa bài viết/repost thành công, nhưng khi truy cập trang cá nhân hoặc xem rác thì tab Thùng rác bị ẩn hoặc số lượng badge rác bị trả về 0 mặc dù trong DB có bài đã xóa.
+
+**File liên quan:**
+- `fe_react/src/pages/UserProfile.jsx`
+
+**Nguyên nhân gốc:**
+- Logic kiểm tra chủ tài khoản `isOwnProfile = currentUser?.uid === id` bị so lệch nếu URL sử dụng ID thô của user `/profile/1` (so sánh string `"1"` với hash UID `"U09..."` trong token trả về `false`). Khi `isOwnProfile` bị sai, tab Thùng rác bị ẩn và các hàm fetch rác không được thực thi.
+
+**Cách fix:**
+- Nâng cấp logic gán `isOwnProfile` so khớp linh hoạt cả `uid` băm và `id` số nguyên từ `currentUser` và dữ liệu `profile` tải về từ server.
+- Tách luồng chạy `fetchTrash()` và `fetchLikedPosts()` ra `useEffect` riêng biệt phụ thuộc trực tiếp vào trạng thái `isOwnProfile` sau khi đã giải mã xong, tránh chạy trùng lặp hoặc bị nuốt request.
+- Gia cố các fetch function trong `UserProfile.jsx` luôn tải token mới nhất từ `localStorage` để gửi Header Authorization chuẩn.
+
+---
+
+### Lỗi 16: Thao tác xóa bình luận bị lỗi vỡ JSON do PHP Warning trên payload rỗng hoặc thiếu thuộc tính
+
+**Ngày gặp:** 05/06/2026
+
+**Phase:** Phase 7C Hotfix
+
+**Mô tả lỗi:**
+- Người dùng bấm nút thùng rác xóa bình luận dưới bài viết hoặc bình luận của chính mình thì toast báo lỗi "Lỗi khi xóa bình luận." do server phản hồi HTML warning làm vỡ định dạng JSON.
+
+**File liên quan:**
+- `be_php/api/comments/delete.php`
+
+**Nguyên nhân gốc:**
+- Khi frontend gửi payload, nếu đối tượng giải mã JSON bằng `json_decode(file_get_contents("php://input"))` bị null hoặc thiếu trường `id`, lệnh kiểm tra thuộc tính `$data->id` trực tiếp sẽ sinh ra PHP Warning: `Attempt to read property "id" on null`. Lỗi này được in ra đầu ra response làm hỏng JSON của client và ném về nhánh catch hiển thị toast.
+
+**Cách fix:**
+- Cải tiến cách nhận dữ liệu đầu vào trong `delete.php` linh hoạt: hỗ trợ lấy từ JSON body và URL-encoded form data (kiểm tra lần lượt `comment_id`, `id` qua POST/GET).
+- Sử dụng mảng kết hợp null coalescing `?? []` và kiểm tra `empty()` thay vì truy cập thuộc tính object để dập tắt triệt để PHP warnings.
+- Áp dụng tương tự kỹ thuật bảo vệ này cho các API bài viết (`soft_delete.php`, `restore.php`, `permanent_delete.php`).
+
+---
+
+### Lỗi 17: Xóa bình luận bị chặn CORS ở OPTIONS preflight
+
+**Ngày gặp:** 05/06/2026
+
+**Phase:** Phase 7D Hotfix
+
+**Mô tả lỗi:**
+- Bấm xóa bình luận bị báo lỗi CORS, preflight OPTIONS thất bại vì không có header `Access-Control-Allow-Origin`.
+
+**File liên quan:**
+- `be_php/api/comments/delete.php`
+
+**Nguyên nhân gốc:**
+- Có đoạn code check OPTIONS và exit sớm ở ngay đầu file `delete.php` trước khi include `database.php`. Vì thế, request OPTIONS thoát ra mà chưa chạy qua `cors.php` để gán header CORS.
+
+**Cách fix:**
+- Gỡ bỏ exit sớm đó, để `include_once '../../config/database.php'` được gọi trước tiên. Khi đó, `cors.php` được gọi trước, tự động xử lý OPTIONS và trả kèm headers CORS hợp lệ trước khi exit.
+
+---
+
+### Lỗi 18: Thùng rác (trash.php) trả về size 0B (Response rỗng)
+
+**Ngày gặp:** 05/06/2026
+
+**Phase:** Phase 7D Hotfix
+
+**Mô tả lỗi:**
+- Network tab báo `trash.php` trả về HTTP status 200 nhưng size 0B, UI không thể render danh sách bài viết trong thùng rác.
+
+**File liên quan:**
+- `be_php/api/posts/trash.php`
+
+**Nguyên nhân gốc:**
+- Tương tự như Lỗi 17, `trash.php` có đoạn check OPTIONS exit sớm trước khi include `database.php`. Trình duyệt gửi request preflight bị lỗi CORS do thiếu header, dẫn tới chặn luôn request GET thật tiếp theo (hoặc request GET thật cũng bị lỗi không phản hồi).
+
+**Cách fix:**
+- Di chuyển `include_once '../../config/database.php'` lên dòng đầu tiên để `cors.php` xử lý trước. Gỡ bỏ mọi khối xử lý OPTIONS trùng lặp và thiếu an toàn ở trước phần include.
+
+
+
 
 
 

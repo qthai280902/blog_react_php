@@ -13,6 +13,17 @@ const AdminPosts = () => {
     const [dateFrom, setDateFrom] = useState('');
     const [dateTo,   setDateTo]   = useState('');
 
+    // Pagination State
+    const [page, setPage] = useState(1);
+    const [totalPages, setTotalPages] = useState(1);
+    const [totalPosts, setTotalPosts] = useState(0);
+    const limit = 15;
+
+    // Reset page to 1 when filters change
+    useEffect(() => {
+        setPage(1);
+    }, [keyword, author, hashtag, dateFrom, dateTo]);
+
     const fetchPosts = useCallback(async () => {
         setLoading(true);
         try {
@@ -22,23 +33,31 @@ const AdminPosts = () => {
             if (hashtag.trim())  params.append('hashtag',   hashtag.trim());
             if (dateFrom)        params.append('date_from', dateFrom);
             if (dateTo)          params.append('date_to',   dateTo);
+            params.append('page', page);
+            params.append('limit', limit);
 
             const qs = params.toString();
             const url = `/api/admin/read_posts.php${qs ? '?' + qs : ''}`;
 
-            // axiosClient interceptor tự unwrap response.data
-            // backend trả về mảng trực tiếp []
             const data = await axiosClient.get(url);
-            setPosts(Array.isArray(data) ? data : []);
+            if (data && data.status === 'success') {
+                setPosts(Array.isArray(data.posts) ? data.posts : []);
+                setTotalPages(data.total_pages || 1);
+                setTotalPosts(data.total_posts || 0);
+            } else {
+                setPosts(Array.isArray(data) ? data : []);
+                setTotalPages(1);
+                setTotalPosts(Array.isArray(data) ? data.length : 0);
+            }
         } catch (err) {
             console.error('AdminPosts fetch error:', err);
             setPosts([]);
         } finally {
             setLoading(false);
         }
-    }, [keyword, author, hashtag, dateFrom, dateTo]);
+    }, [keyword, author, hashtag, dateFrom, dateTo, page]);
 
-    // Debounce 450ms
+    // Debounce 450ms for filters/page changes
     useEffect(() => {
         const timer = setTimeout(() => {
             fetchPosts();
@@ -51,6 +70,7 @@ const AdminPosts = () => {
         try {
             await axiosClient.post('/api/posts/soft_delete.php', { post_id: id });
             setPosts(prev => prev.filter(p => p.id !== id));
+            setTotalPosts(prev => Math.max(0, prev - 1));
         } catch (err) {
             alert(err?.response?.data?.message || 'Lỗi khi xóa bài viết.');
         }
@@ -69,12 +89,12 @@ const AdminPosts = () => {
                 <div>
                     <h1 className="text-3xl font-black text-white uppercase tracking-tight">Quản lý bài viết</h1>
                     <p className="text-cyan-500/50 font-mono text-xs uppercase mt-1">
-                        Records found: <span className="text-cyan-400 font-black">{posts.length}</span>
+                        Records found: <span className="text-cyan-400 font-black">{totalPosts}</span>
                     </p>
                 </div>
                 {hasFilter && (
                     <button onClick={clearFilters}
-                        className="flex items-center gap-1.5 px-4 py-2 text-[11px] font-black uppercase tracking-widest text-red-400 bg-red-500/5 border border-red-500/20 rounded-xl hover:bg-red-500/10 transition-all active:scale-95"
+                        className="flex items-center gap-1.5 px-4 py-2 text-[11px] font-black uppercase tracking-widest text-red-400 bg-red-500/5 border border-red-500/20 rounded-xl hover:bg-red-500/10 transition-all active:scale-95 cursor-pointer border-0"
                     >
                         <X size={12} strokeWidth={2} /> Xóa bộ lọc
                     </button>
@@ -89,7 +109,7 @@ const AdminPosts = () => {
                     </label>
                     <input type="text" value={keyword} onChange={e => setKeyword(e.target.value)}
                         placeholder="Gõ từ khóa..."
-                        className="w-full bg-slate-950 border border-slate-800 focus:border-cyan-500/60 rounded-xl px-4 py-2.5 text-sm text-slate-300 placeholder-slate-600 outline-none transition-colors" />
+                        className="w-full bg-slate-950 border border-slate-800 focus:border-cyan-500/60 rounded-xl px-4 py-2.5 text-xs text-slate-300 placeholder-slate-600 outline-none transition-colors" />
                 </div>
                 <div className="space-y-1.5">
                     <label className="flex items-center gap-1 text-[10px] font-black text-slate-500 uppercase tracking-widest">
@@ -97,7 +117,7 @@ const AdminPosts = () => {
                     </label>
                     <input type="text" value={author} onChange={e => setAuthor(e.target.value)}
                         placeholder="@username..."
-                        className="w-full bg-slate-950 border border-slate-800 focus:border-cyan-500/60 rounded-xl px-4 py-2.5 text-sm text-slate-300 placeholder-slate-600 outline-none transition-colors" />
+                        className="w-full bg-slate-950 border border-slate-800 focus:border-cyan-500/60 rounded-xl px-4 py-2.5 text-xs text-slate-300 placeholder-slate-600 outline-none transition-colors" />
                 </div>
                 <div className="space-y-1.5">
                     <label className="flex items-center gap-1 text-[10px] font-black text-slate-500 uppercase tracking-widest">
@@ -105,7 +125,7 @@ const AdminPosts = () => {
                     </label>
                     <input type="text" value={hashtag} onChange={e => setHashtag(e.target.value)}
                         placeholder="#tag..."
-                        className="w-full bg-slate-950 border border-slate-800 focus:border-cyan-500/60 rounded-xl px-4 py-2.5 text-sm text-slate-300 placeholder-slate-600 outline-none transition-colors" />
+                        className="w-full bg-slate-950 border border-slate-800 focus:border-cyan-500/60 rounded-xl px-4 py-2.5 text-xs text-slate-300 placeholder-slate-600 outline-none transition-colors" />
                 </div>
                 <div className="lg:col-span-5 grid grid-cols-2 gap-4">
                     <div className="space-y-1.5">
@@ -113,14 +133,14 @@ const AdminPosts = () => {
                             <Calendar size={10} strokeWidth={2} /> Từ ngày
                         </label>
                         <input type="date" value={dateFrom} onChange={e => setDateFrom(e.target.value)}
-                            className="w-full bg-slate-950 border border-slate-800 focus:border-cyan-500/60 rounded-xl px-4 py-2.5 text-sm text-slate-300 outline-none transition-colors [color-scheme:dark]" />
+                            className="w-full bg-slate-950 border border-slate-800 focus:border-cyan-500/60 rounded-xl px-4 py-2.5 text-xs text-slate-300 outline-none transition-colors [color-scheme:dark]" />
                     </div>
                     <div className="space-y-1.5">
                         <label className="flex items-center gap-1 text-[10px] font-black text-slate-500 uppercase tracking-widest">
                             <Calendar size={10} strokeWidth={2} /> Đến ngày
                         </label>
                         <input type="date" value={dateTo} onChange={e => setDateTo(e.target.value)}
-                            className="w-full bg-slate-950 border border-slate-800 focus:border-cyan-500/60 rounded-xl px-4 py-2.5 text-sm text-slate-300 outline-none transition-colors [color-scheme:dark]" />
+                            className="w-full bg-slate-950 border border-slate-800 focus:border-cyan-500/60 rounded-xl px-4 py-2.5 text-xs text-slate-300 outline-none transition-colors [color-scheme:dark]" />
                     </div>
                 </div>
             </div>
@@ -179,7 +199,7 @@ const AdminPosts = () => {
                                     </td>
                                     <td className="p-5 text-center">
                                         <button onClick={() => handleDelete(post.id, post.title)} title="Xóa bài viết"
-                                            className="inline-flex items-center gap-1.5 px-3 py-2 text-red-400 bg-red-500/5 border border-red-500/20 rounded-xl hover:bg-red-500/10 hover:border-red-500/50 transition-all active:scale-90 text-[11px] font-black uppercase tracking-widest">
+                                            className="inline-flex items-center gap-1.5 px-3 py-2 text-red-400 bg-red-500/5 border border-red-500/20 rounded-xl hover:bg-red-500/10 hover:border-red-500/50 transition-all active:scale-90 text-[11px] font-black uppercase tracking-widest cursor-pointer border-0">
                                             <Trash2 size={13} strokeWidth={1.5} /> Xóa
                                         </button>
                                     </td>
@@ -189,6 +209,29 @@ const AdminPosts = () => {
                     </tbody>
                 </table>
             </div>
+
+            {/* ── PAGINATION CONTROLS ── */}
+            {totalPages > 1 && (
+                <div className="flex items-center justify-between px-4 py-3 bg-slate-950/40 border border-cyan-500/10 rounded-2xl">
+                    <button
+                        disabled={page === 1}
+                        onClick={() => setPage(prev => Math.max(1, prev - 1))}
+                        className="px-4 py-2 text-xs font-black uppercase tracking-widest text-cyan-400 bg-cyan-500/5 border border-cyan-500/10 hover:bg-cyan-500/10 rounded-xl transition-all disabled:opacity-30 disabled:pointer-events-none cursor-pointer border-0"
+                    >
+                        Trang trước
+                    </button>
+                    <span className="text-xs text-slate-400 font-mono">
+                        Trang <span className="text-cyan-400 font-black">{page}</span> / {totalPages}
+                    </span>
+                    <button
+                        disabled={page === totalPages}
+                        onClick={() => setPage(prev => Math.min(totalPages, prev + 1))}
+                        className="px-4 py-2 text-xs font-black uppercase tracking-widest text-cyan-400 bg-cyan-500/5 border border-cyan-500/10 hover:bg-cyan-500/10 rounded-xl transition-all disabled:opacity-30 disabled:pointer-events-none cursor-pointer border-0"
+                    >
+                        Trang sau
+                    </button>
+                </div>
+            )}
         </div>
     );
 };

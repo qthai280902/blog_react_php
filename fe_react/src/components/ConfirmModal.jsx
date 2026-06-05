@@ -91,7 +91,7 @@ const ConfirmModal = ({
                             type="button" 
                             onClick={onClose}
                             disabled={loading}
-                            className="order-2 sm:order-1 px-6 py-3 rounded-xl font-bold text-slate-500 hover:bg-slate-100 transition-colors uppercase tracking-widest text-xs"
+                            className="order-2 sm:order-1 px-6 py-3 rounded-xl font-bold text-slate-600 bg-slate-100 hover:bg-slate-200 transition-all uppercase tracking-widest text-xs border-0 cursor-pointer"
                         >
                             {cancelText}
                         </button>
@@ -99,7 +99,7 @@ const ConfirmModal = ({
                             type="button" 
                             onClick={onConfirm}
                             disabled={loading}
-                            className={`order-1 sm:order-2 px-8 py-3 ${currentStyle.btn} text-white font-black rounded-xl shadow-lg active:scale-95 transition-all uppercase tracking-widest text-xs flex items-center justify-center gap-2 ${loading && 'opacity-50 cursor-not-allowed'}`}
+                            className={`order-1 sm:order-2 px-8 py-3 ${currentStyle.btn} text-white font-black rounded-xl shadow-lg active:scale-95 transition-all uppercase tracking-widest text-xs flex items-center justify-center gap-2 border-0 cursor-pointer ${loading && 'opacity-50 cursor-not-allowed'}`}
                         >
                             {loading ? 'Đang xử lý...' : confirmText}
                         </button>

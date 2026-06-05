@@ -19,7 +19,55 @@ $hashtag   = isset($_GET['hashtag'])   ? trim($_GET['hashtag'])   : '';
 $date_from = isset($_GET['date_from']) ? trim($_GET['date_from']) : '';
 $date_to   = isset($_GET['date_to'])   ? trim($_GET['date_to'])   : '';
 
-// Dùng subquery cho stats để tránh lỗi GROUP BY trên nhiều LEFT JOIN
+$page = isset($_GET['page']) ? max(1, (int)$_GET['page']) : 1;
+$limit = isset($_GET['limit']) ? max(1, min(100, (int)$_GET['limit'])) : 15;
+$offset = ($page - 1) * $limit;
+
+// Filter clauses
+$where_clauses = ["p.deleted_at IS NULL"];
+$params = [];
+
+if ($keyword !== '') {
+    $where_clauses[] = "p.title LIKE ?";
+    $params[] = '%' . $keyword . '%';
+}
+if ($author !== '') {
+    $where_clauses[] = "u.username LIKE ?";
+    $params[] = '%' . $author . '%';
+}
+if ($date_from !== '') {
+    $where_clauses[] = "DATE(p.created_at) >= ?";
+    $params[] = $date_from;
+}
+if ($date_to !== '') {
+    $where_clauses[] = "DATE(p.created_at) <= ?";
+    $params[] = $date_to;
+}
+if ($hashtag !== '') {
+    $where_clauses[] = "p.id IN (
+        SELECT pt2.post_id FROM post_tags pt2
+        JOIN tags t2 ON pt2.tag_id = t2.id
+        WHERE t2.name LIKE ?
+    )";
+    $params[] = '%' . $hashtag . '%';
+}
+
+$where_sql = " WHERE " . implode(" AND ", $where_clauses);
+
+// 1. Count Total matching posts
+$count_sql = "SELECT COUNT(DISTINCT p.id) as total FROM posts p INNER JOIN users u ON p.user_id = u.id" . $where_sql;
+try {
+    $count_stmt = $db->prepare($count_sql);
+    $count_stmt->execute($params);
+    $total_posts = (int)$count_stmt->fetch(PDO::FETCH_ASSOC)['total'];
+    $total_pages = max(1, ceil($total_posts / $limit));
+} catch (Exception $e) {
+    http_response_code(500);
+    echo json_encode(["message" => "SQL error count: " . $e->getMessage()]);
+    exit();
+}
+
+// 2. Fetch data
 $sql = "SELECT 
             p.id,
             p.title,
@@ -34,40 +82,21 @@ $sql = "SELECT
             (SELECT COUNT(*) FROM comments cm WHERE cm.post_id = p.id) AS total_comments
         FROM posts p
         INNER JOIN users u ON p.user_id = u.id
-        WHERE p.deleted_at IS NULL";
-
-$params = [];
-
-if ($keyword !== '') {
-    $sql .= " AND p.title LIKE ?";
-    $params[] = '%' . $keyword . '%';
-}
-if ($author !== '') {
-    $sql .= " AND u.username LIKE ?";
-    $params[] = '%' . $author . '%';
-}
-if ($date_from !== '') {
-    $sql .= " AND DATE(p.created_at) >= ?";
-    $params[] = $date_from;
-}
-if ($date_to !== '') {
-    $sql .= " AND DATE(p.created_at) <= ?";
-    $params[] = $date_to;
-}
-if ($hashtag !== '') {
-    $sql .= " AND p.id IN (
-        SELECT pt2.post_id FROM post_tags pt2
-        JOIN tags t2 ON pt2.tag_id = t2.id
-        WHERE t2.name LIKE ?
-    )";
-    $params[] = '%' . $hashtag . '%';
-}
-
-$sql .= " ORDER BY p.created_at DESC LIMIT 100";
+        " . $where_sql . "
+        ORDER BY p.created_at DESC
+        LIMIT ? OFFSET ?";
 
 try {
     $stmt = $db->prepare($sql);
-    $stmt->execute($params);
+    
+    // Bind position variables
+    $idx = 1;
+    foreach ($params as $p) {
+        $stmt->bindValue($idx++, $p);
+    }
+    $stmt->bindValue($idx++, $limit, PDO::PARAM_INT);
+    $stmt->bindValue($idx++, $offset, PDO::PARAM_INT);
+    $stmt->execute();
 
     $posts = [];
     while ($row = $stmt->fetch(PDO::FETCH_ASSOC)) {
@@ -79,9 +108,16 @@ try {
     }
 
     http_response_code(200);
-    echo json_encode($posts);
+    echo json_encode([
+        "status" => "success",
+        "posts" => $posts,
+        "total_posts" => $total_posts,
+        "total_pages" => $total_pages,
+        "page" => $page,
+        "limit" => $limit
+    ]);
 } catch (Exception $e) {
     http_response_code(500);
-    echo json_encode(["message" => "SQL error: " . $e->getMessage()]);
+    echo json_encode(["message" => "SQL error data: " . $e->getMessage()]);
 }
 ?>

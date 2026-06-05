@@ -23,6 +23,7 @@ $query = "SELECT
             p.id, 
             p.title, 
             p.content, 
+            p.excerpt,
             p.created_at,
             p.cover_image,
             p.is_hidden,
@@ -53,6 +54,7 @@ if ($row) {
     $row['tags'] = $row['tags'] ? explode(',', $row['tags']) : [];
     $row['avg_rating'] = $row['avg_rating'] ? round((float)$row['avg_rating'], 1) : 0;
     $row['content'] = html_entity_decode($row['content']);
+    $row['excerpt'] = html_entity_decode($row['excerpt'] ?? '');
     $row['total_likes'] = (int)$row['total_likes'];
     $row['total_comments'] = (int)$row['total_comments'];
     $row['author_followers'] = (int)$row['author_followers'];

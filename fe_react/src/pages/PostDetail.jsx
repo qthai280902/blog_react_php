@@ -16,6 +16,11 @@ const PostDetail = () => {
     const [hoverRating, setHoverRating] = useState(0);
     const [loading, setLoading] = useState(true);
     const [submittingComment, setSubmittingComment] = useState(false);
+
+    // States for comment replies
+    const [replyToId, setReplyToId] = useState(null);
+    const [replyContent, setReplyContent] = useState("");
+    const [submittingReply, setSubmittingReply] = useState(false);
     
     const [liked, setLiked] = useState(false);
     const [likeCount, setLikeCount] = useState(0);
@@ -79,6 +84,29 @@ const PostDetail = () => {
         } catch (err) {
             toast.error(err.response?.data?.message || "Lỗi khi gửi bình luận.");
             setSubmittingComment(false);
+        }
+    };
+
+    const handleReplySubmit = async (e, parentId) => {
+        e.preventDefault();
+        if (!token) return toast.error("Vui lòng đăng nhập để phản hồi.");
+        if (!replyContent.trim()) return;
+
+        setSubmittingReply(true);
+        try {
+            const res = await axiosClient.post('/api/comments/create.php', 
+                { post_id: id, content: replyContent, parent_id: parentId },
+                { headers: { 'Authorization': 'Bearer ' + token } }
+            );
+            const newReplyObj = { ...res.comment, user_id: currentUser.id };
+            setComments([newReplyObj, ...comments]);
+            setReplyContent("");
+            setReplyToId(null);
+            setSubmittingReply(false);
+            toast.success("Đã đăng phản hồi");
+        } catch (err) {
+            toast.error(err.response?.data?.message || "Lỗi khi gửi phản hồi.");
+            setSubmittingReply(false);
         }
     };
 
@@ -159,6 +187,25 @@ const PostDetail = () => {
 
     const gallery = post.gallery || [];
 
+    // Filter parent comments (parent_id is null)
+    const parentComments = comments.filter(c => c.parent_id === null);
+
+    // Group replies by parent_id
+    const repliesByParentId = {};
+    comments.forEach(c => {
+        if (c.parent_id !== null) {
+            if (!repliesByParentId[c.parent_id]) {
+                repliesByParentId[c.parent_id] = [];
+            }
+            repliesByParentId[c.parent_id].push(c);
+        }
+    });
+
+    // Sort replies ascending by creation date
+    Object.keys(repliesByParentId).forEach(parentId => {
+        repliesByParentId[parentId].sort((a, b) => new Date(a.created_at) - new Date(b.created_at));
+    });
+
     return (
         <article className="max-w-4xl mx-auto animate-in fade-in duration-500">
             <header className="mb-8">
@@ -175,7 +222,7 @@ const PostDetail = () => {
                 <h1 className="text-3xl md:text-4xl font-black text-slate-900 leading-tight mb-6 tracking-tight">{post.title}</h1>
                 <div className="flex items-center space-x-6 text-slate-400">
                     <Link to={`/profile/${post.author_uid}`} className="flex items-center group no-underline gap-1.5">
-                        <div className="w-9 h-9 rounded-xl bg-slate-900 flex items-center justify-center font-bold text-white group-hover:bg-blue-600 transition-colors uppercase overflow-hidden border border-slate-200 shadow-sm">
+                        <div className="w-9 h-9 rounded-xl bg-gradient-to-tr from-slate-700 to-slate-800 flex items-center justify-center font-bold text-white group-hover:bg-blue-600 transition-colors uppercase overflow-hidden border border-slate-200 shadow-sm shadow-inner">
                             {post.author_avatar ? (
                                 <img 
                                     src={`http://localhost:8000/uploads/${post.author_avatar}`} 
@@ -358,43 +405,159 @@ const PostDetail = () => {
 
                 {/* Comments list */}
                 <div className="space-y-6 mb-16">
-                    {comments.map((comment) => (
-                        <div key={comment.id} className="flex space-x-4 animate-in fade-in duration-300">
-                            <Link to={`/profile/${comment.user_uid}`} className="flex-shrink-0 no-underline">
-                                <div className="w-11 h-11 rounded-xl bg-slate-900 flex items-center justify-center font-bold text-white text-sm border border-slate-100 uppercase overflow-hidden shadow-sm">
-                                    {comment.username?.[0]?.toUpperCase() || '?'}
-                                </div>
-                            </Link>
-                            <div className="flex-1 min-w-0">
-                                <div className="bg-white rounded-2xl p-5 border border-slate-100 relative shadow-sm hover:shadow-md transition-all">
-                                    <div className="flex items-center justify-between mb-2">
-                                        <div className="flex items-center gap-2">
-                                            <Link to={`/profile/${comment.user_uid}`} className="font-bold text-slate-800 hover:text-blue-600 no-underline text-xs uppercase tracking-tight">
-                                                @{comment.username}
-                                            </Link>
-                                            {comment.followers !== undefined && (
-                                                <UserBadge followers={comment.followers || 0} size={12} />
+                    {parentComments.map((comment) => {
+                        const replies = repliesByParentId[comment.id] || [];
+                        return (
+                            <div key={comment.id} className="space-y-4 animate-in fade-in duration-300">
+                                {/* Parent comment block */}
+                                <div className="flex space-x-4">
+                                    <Link to={`/profile/${comment.user_uid}`} className="flex-shrink-0 no-underline">
+                                        <div className="w-11 h-11 rounded-xl bg-gradient-to-tr from-slate-700 to-slate-800 flex items-center justify-center font-bold text-white text-sm border border-slate-100 uppercase overflow-hidden shadow-sm shadow-inner">
+                                            {comment.avatar_image ? (
+                                                <img 
+                                                    src={`http://localhost:8000/uploads/${comment.avatar_image}`} 
+                                                    className="w-full h-full object-cover" 
+                                                    alt={comment.username} 
+                                                />
+                                            ) : (
+                                                <span>{comment.username?.[0]?.toUpperCase() || '?'}</span>
                                             )}
                                         </div>
-                                        <div className="flex items-center space-x-3 text-[10px] text-slate-400">
-                                            <span className="font-mono">{comment.created_at}</span>
-                                            {canDeleteComment(comment) && (
-                                                <button 
-                                                    onClick={() => handleDeleteComment(comment.id)} 
-                                                    className="text-slate-350 hover:text-red-500 transition-all border-0 bg-transparent cursor-pointer p-0"
-                                                    title={isAdmin ? 'Xóa (Admin)' : 'Xóa bình luận'}
-                                                >
-                                                    <Trash2 size={14} />
-                                                </button>
+                                    </Link>
+                                    <div className="flex-1 min-w-0">
+                                        <div className="bg-white rounded-2xl p-5 border border-slate-100 relative shadow-sm hover:shadow-md transition-all">
+                                            <div className="flex items-center justify-between mb-2">
+                                                <div className="flex items-center gap-2">
+                                                    <Link to={`/profile/${comment.user_uid}`} className="font-bold text-slate-800 hover:text-blue-600 no-underline text-xs uppercase tracking-tight">
+                                                        @{comment.username}
+                                                    </Link>
+                                                    {comment.followers !== undefined && (
+                                                        <UserBadge followers={comment.followers || 0} size={12} />
+                                                    )}
+                                                </div>
+                                                <div className="flex items-center space-x-3 text-[10px] text-slate-400">
+                                                    <span className="font-mono">{comment.created_at}</span>
+                                                    {canDeleteComment(comment) && (
+                                                        <button 
+                                                            onClick={() => handleDeleteComment(comment.id)} 
+                                                            className="text-slate-350 hover:text-red-500 transition-all border-0 bg-transparent cursor-pointer p-0"
+                                                            title={isAdmin ? 'Xóa (Admin)' : 'Xóa bình luận'}
+                                                        >
+                                                            <Trash2 size={14} />
+                                                        </button>
+                                                    )}
+                                                </div>
+                                            </div>
+                                            <p className="text-slate-600 leading-relaxed text-xs">{comment.content}</p>
+                                            
+                                            {/* Action footer: reply button */}
+                                            {token && (
+                                                <div className="flex justify-end mt-2">
+                                                    <button 
+                                                        onClick={() => {
+                                                            setReplyToId(replyToId === comment.id ? null : comment.id);
+                                                            setReplyContent("");
+                                                        }}
+                                                        className="text-[10px] font-black uppercase tracking-wider text-blue-600 hover:text-blue-700 bg-transparent border-0 cursor-pointer p-0"
+                                                    >
+                                                        {replyToId === comment.id ? "Hủy" : "Phản hồi"}
+                                                    </button>
+                                                </div>
                                             )}
                                         </div>
                                     </div>
-                                    <p className="text-slate-600 leading-relaxed text-xs">{comment.content}</p>
                                 </div>
+
+                                {/* Reply Input Box under the parent comment */}
+                                {replyToId === comment.id && (
+                                    <div className="ml-12 bg-slate-50 border border-slate-100 rounded-2xl p-4 shadow-sm animate-in slide-in-from-top-2">
+                                        <form onSubmit={(e) => handleReplySubmit(e, comment.id)} className="space-y-3">
+                                            <textarea 
+                                                value={replyContent} 
+                                                onChange={(e) => setReplyContent(e.target.value)} 
+                                                placeholder={`Phản hồi @${comment.username}...`} 
+                                                className="w-full bg-white border border-slate-200 focus:border-blue-500 rounded-xl p-3 text-slate-800 text-xs focus:outline-none focus:ring-4 focus:ring-blue-50 transition-all resize-none shadow-sm placeholder:text-slate-350" 
+                                                rows={2}
+                                                disabled={submittingReply} 
+                                            />
+                                            <div className="flex justify-end">
+                                                <button 
+                                                    type="submit" 
+                                                    disabled={submittingReply || !replyContent.trim()}
+                                                    className="px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white font-black rounded-lg shadow-sm transition-all active:scale-95 uppercase text-[9px] tracking-wider cursor-pointer border-0 disabled:opacity-50"
+                                                >
+                                                    Gửi phản hồi
+                                                </button>
+                                            </div>
+                                        </form>
+                                    </div>
+                                )}
+
+                                {/* Render nested replies */}
+                                {replies.map((reply) => (
+                                    <div key={reply.id} className="flex space-x-4 ml-12 border-l-2 border-blue-500/20 pl-4 py-1 animate-in fade-in duration-300">
+                                        <Link to={`/profile/${reply.user_uid}`} className="flex-shrink-0 no-underline">
+                                            <div className="w-8 h-8 rounded-xl bg-gradient-to-tr from-slate-700 to-slate-800 flex items-center justify-center font-bold text-white text-xs border border-slate-100 uppercase overflow-hidden shadow-sm shadow-inner">
+                                                {reply.avatar_image ? (
+                                                    <img 
+                                                        src={`http://localhost:8000/uploads/${reply.avatar_image}`} 
+                                                        className="w-full h-full object-cover" 
+                                                        alt={reply.username} 
+                                                    />
+                                                ) : (
+                                                    <span>{reply.username?.[0]?.toUpperCase() || '?'}</span>
+                                                )}
+                                            </div>
+                                        </Link>
+                                        <div className="flex-1 min-w-0">
+                                            <div className="bg-slate-50/70 rounded-2xl p-4 border border-slate-100 relative shadow-sm hover:shadow-md transition-all">
+                                                <div className="flex items-center justify-between mb-1.5">
+                                                    <div className="flex items-center gap-2">
+                                                        <Link to={`/profile/${reply.user_uid}`} className="font-bold text-slate-750 hover:text-blue-600 no-underline text-[11px] uppercase tracking-tight">
+                                                            @{reply.username}
+                                                        </Link>
+                                                        <span className="text-[8px] font-black uppercase text-blue-600 bg-blue-50/80 px-2 py-0.5 rounded border border-blue-100/30">Phản hồi</span>
+                                                        {reply.followers !== undefined && (
+                                                            <UserBadge followers={reply.followers || 0} size={10} />
+                                                        )}
+                                                    </div>
+                                                    <div className="flex items-center space-x-2 text-[9px] text-slate-400">
+                                                        <span className="font-mono">{reply.created_at}</span>
+                                                        {canDeleteComment(reply) && (
+                                                            <button 
+                                                                onClick={() => handleDeleteComment(reply.id)} 
+                                                                className="text-slate-350 hover:text-red-500 transition-all border-0 bg-transparent cursor-pointer p-0"
+                                                                title={isAdmin ? 'Xóa (Admin)' : 'Xóa bình luận'}
+                                                            >
+                                                                <Trash2 size={12} />
+                                                            </button>
+                                                        )}
+                                                    </div>
+                                                </div>
+                                                <p className="text-slate-600 leading-relaxed text-xs">{reply.content}</p>
+
+                                                {/* Action footer: reply to reply trigger */}
+                                                {token && (
+                                                    <div className="flex justify-end mt-1.5">
+                                                        <button 
+                                                            onClick={() => {
+                                                                setReplyToId(replyToId === comment.id ? null : comment.id);
+                                                                setReplyContent(`@${reply.username} `);
+                                                            }}
+                                                            className="text-[9px] font-black uppercase tracking-wider text-blue-600 hover:text-blue-700 bg-transparent border-0 cursor-pointer p-0"
+                                                        >
+                                                            Phản hồi
+                                                        </button>
+                                                    </div>
+                                                )}
+                                            </div>
+                                        </div>
+                                    </div>
+                                ))}
                             </div>
-                        </div>
-                    ))}
-                    {comments.length === 0 && (
+                        );
+                    })}
+                    {parentComments.length === 0 && (
                         <div className="text-center py-10 bg-slate-50/50 rounded-2xl border border-slate-100 text-slate-400 font-mono text-[9px] uppercase tracking-widest">
                             Chưa có bình luận nào
                         </div>

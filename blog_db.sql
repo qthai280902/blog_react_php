@@ -32,6 +32,7 @@ CREATE TABLE `comments` (
   `user_id` int(11) NOT NULL,
   `post_id` int(11) NOT NULL,
   `content` text NOT NULL,
+  `parent_id` int(11) DEFAULT NULL,
   `created_at` timestamp NOT NULL DEFAULT current_timestamp()
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
@@ -210,6 +211,7 @@ CREATE TABLE `posts` (
   `user_id` int(11) NOT NULL,
   `title` varchar(255) NOT NULL,
   `content` mediumtext NOT NULL,
+  `excerpt` text DEFAULT NULL,
   `cover_image` varchar(255) DEFAULT NULL,
   `is_hidden` tinyint(1) NOT NULL DEFAULT 0,
   `deleted_at` datetime DEFAULT NULL,
@@ -646,6 +648,25 @@ CREATE TABLE `user_name_history` (
   `changed_at` timestamp NOT NULL DEFAULT current_timestamp()
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
+-- --------------------------------------------------------
+
+--
+-- Cấu trúc bảng cho bảng `notifications`
+--
+
+CREATE TABLE `notifications` (
+  `id` int(10) UNSIGNED NOT NULL,
+  `user_id` int(11) NOT NULL,
+  `actor_id` int(11) NOT NULL,
+  `post_id` int(11) DEFAULT NULL,
+  `comment_id` int(11) DEFAULT NULL,
+  `type` enum('comment','like','repost','reply') NOT NULL,
+  `message` varchar(255) DEFAULT NULL,
+  `is_read` tinyint(1) NOT NULL DEFAULT 0,
+  `read_at` datetime DEFAULT NULL,
+  `created_at` datetime NOT NULL DEFAULT current_timestamp()
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+
 --
 -- Chỉ mục cho các bảng đã đổ
 --
@@ -736,6 +757,18 @@ ALTER TABLE `user_name_history`
   ADD KEY `idx_name_history_user_id` (`user_id`);
 
 --
+-- Chỉ mục cho bảng `notifications`
+--
+ALTER TABLE `notifications`
+  ADD PRIMARY KEY (`id`),
+  ADD KEY `user_id` (`user_id`),
+  ADD KEY `actor_id` (`actor_id`),
+  ADD KEY `post_id` (`post_id`),
+  ADD KEY `comment_id` (`comment_id`),
+  ADD KEY `idx_notifications_user_read` (`user_id`, `is_read`),
+  ADD KEY `idx_notifications_created_at` (`created_at`);
+
+--
 -- AUTO_INCREMENT cho các bảng đã đổ
 --
 
@@ -788,6 +821,12 @@ ALTER TABLE `user_name_history`
   MODIFY `id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=2;
 
 --
+-- AUTO_INCREMENT cho bảng `notifications`
+--
+ALTER TABLE `notifications`
+  MODIFY `id` int(10) UNSIGNED NOT NULL AUTO_INCREMENT;
+
+--
 -- Các ràng buộc cho các bảng đã đổ
 --
 
@@ -796,7 +835,8 @@ ALTER TABLE `user_name_history`
 --
 ALTER TABLE `comments`
   ADD CONSTRAINT `comments_ibfk_1` FOREIGN KEY (`user_id`) REFERENCES `users` (`id`) ON DELETE CASCADE,
-  ADD CONSTRAINT `comments_ibfk_2` FOREIGN KEY (`post_id`) REFERENCES `posts` (`id`) ON DELETE CASCADE;
+  ADD CONSTRAINT `comments_ibfk_2` FOREIGN KEY (`post_id`) REFERENCES `posts` (`id`) ON DELETE CASCADE,
+  ADD CONSTRAINT `fk_comments_parent` FOREIGN KEY (`parent_id`) REFERENCES `comments` (`id`) ON DELETE CASCADE;
 
 --
 -- Các ràng buộc cho bảng `follows`
@@ -851,6 +891,15 @@ ALTER TABLE `reposts`
 --
 ALTER TABLE `user_name_history`
   ADD CONSTRAINT `fk_name_history_user` FOREIGN KEY (`user_id`) REFERENCES `users` (`id`) ON DELETE CASCADE;
+
+--
+-- Các ràng buộc cho bảng `notifications`
+--
+ALTER TABLE `notifications`
+  ADD CONSTRAINT `notifications_ibfk_1` FOREIGN KEY (`user_id`) REFERENCES `users` (`id`) ON DELETE CASCADE,
+  ADD CONSTRAINT `notifications_ibfk_2` FOREIGN KEY (`actor_id`) REFERENCES `users` (`id`) ON DELETE CASCADE,
+  ADD CONSTRAINT `notifications_ibfk_3` FOREIGN KEY (`post_id`) REFERENCES `posts` (`id`) ON DELETE CASCADE,
+  ADD CONSTRAINT `notifications_ibfk_4` FOREIGN KEY (`comment_id`) REFERENCES `comments` (`id`) ON DELETE CASCADE;
 COMMIT;
 
 /*!40101 SET CHARACTER_SET_CLIENT=@OLD_CHARACTER_SET_CLIENT */;
